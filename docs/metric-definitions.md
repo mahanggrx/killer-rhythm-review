@@ -45,7 +45,7 @@
 | --- | --- |
 | `totalHooks` | 有效普通 `hook_completed` 总数；同一次悬挂自然进入下一阶段不增加计数。 |
 | `uniqueSurvivorsHooked` | 至少发生过一次有效普通挂钩的不同逃生者数量。 |
-| `secondHookConversions` | 首次有效普通挂钩后成功离钩，并在其后再次有效上钩的逃生者数量。 |
+| `secondHookConversions` | 首次有效普通挂钩后成功离钩，并在其后再次有效上钩的逃生者数量；`sampleSize` 是形成过再次上钩机会的逃生者数，供规则判断最低样本。 |
 | `firstEliminationTime` | 从 `trial_start` 到首次永久减员；献祭、处决或流血死亡均可计入，BOT 接管和逃脱不计。 |
 | `firstHookChainEliminationTime` | 从 `trial_start` 到首次有此前普通挂钩证据支持的献祭结果；与处决和流血死亡分开。 |
 | `hookConcentration` | 最高单个逃生者的有效普通挂钩数除以总有效普通挂钩数；无挂钩时因零分母而不可用。 |

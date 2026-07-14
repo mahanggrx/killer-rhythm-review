@@ -48,6 +48,7 @@ export function calculateHookYieldMetrics(
   const conversionStates = new Map<string, HookConversionState>();
   const conversionEvidenceIds: string[] = [];
   let conversionCount = 0;
+  let conversionOpportunityCount = 0;
 
   const getConversionState = (survivorId: string): HookConversionState => {
     const existing = conversionStates.get(survivorId);
@@ -77,11 +78,7 @@ export function calculateHookYieldMetrics(
       ) {
         state.converted = true;
         conversionCount += 1;
-        conversionEvidenceIds.push(
-          state.firstHook.eventId,
-          state.firstUnhookAfterFirstHook.eventId,
-          event.eventId,
-        );
+        conversionEvidenceIds.push(event.eventId);
       }
 
       continue;
@@ -96,6 +93,8 @@ export function calculateHookYieldMetrics(
         !state.converted
       ) {
         state.firstUnhookAfterFirstHook = event;
+        conversionOpportunityCount += 1;
+        conversionEvidenceIds.push(state.firstHook.eventId, event.eventId);
       }
     }
   }
@@ -103,9 +102,9 @@ export function calculateHookYieldMetrics(
   const secondHookConversions = availableMetric(
     conversionCount,
     "count",
-    "首次有效普通挂钩后成功离钩，并在其后再次有效上钩的逃生者数量；同一次挂钩自然进阶段不算转化。",
+    "首次有效普通挂钩后成功离钩，并在其后再次有效上钩的逃生者数量；sampleSize 表示形成过再次上钩机会的逃生者数，同一次挂钩自然进阶段不算转化。",
     conversionEvidenceIds,
-    conversionCount,
+    conversionOpportunityCount,
   );
 
   const trialStart = events.find((event) => event.type === "trial_start");

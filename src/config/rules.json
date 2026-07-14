@@ -1,0 +1,61 @@
+{
+  "version": "1.0",
+  "ruleset": "base_only_1v4_10.0.2",
+  "prototypeThresholdNotice": "所有默认阈值均为原型待验证数值，不代表官方标准或经过真实对局数据验证的结论。",
+  "maxDisplayedMetrics": 3,
+  "severityBands": {
+    "highMinScore": 2,
+    "criticalMinScore": 3
+  },
+  "priorityByExperience": {
+    "novice": [
+      "FIRST_CHASE_TOO_LONG",
+      "SEARCH_GAP_TOO_LONG",
+      "GENERATOR_CONTROL_WEAK",
+      "HOOK_PRESSURE_DIFFUSE"
+    ],
+    "intermediate": [
+      "GENERATOR_CONTROL_WEAK",
+      "HOOK_PRESSURE_DIFFUSE",
+      "FIRST_CHASE_TOO_LONG",
+      "SEARCH_GAP_TOO_LONG"
+    ]
+  },
+  "rules": {
+    "FIRST_CHASE_TOO_LONG": {
+      "enabled": true,
+      "thresholdMs": 75000,
+      "minimumSampleSize": 1,
+      "baseSeverity": 1,
+      "deviationWeight": 1,
+      "confidence": 1
+    },
+    "SEARCH_GAP_TOO_LONG": {
+      "enabled": true,
+      "thresholdMs": 30000,
+      "minimumSampleSize": 1,
+      "baseSeverity": 1,
+      "deviationWeight": 1,
+      "confidence": 1
+    },
+    "GENERATOR_CONTROL_WEAK": {
+      "enabled": true,
+      "minimumLosses": 2,
+      "minimumSampleSize": 1,
+      "baseSeverity": 1,
+      "deviationWeight": 1,
+      "confidence": 1
+    },
+    "HOOK_PRESSURE_DIFFUSE": {
+      "enabled": true,
+      "minimumTotalHooks": 4,
+      "maximumSecondHookConversionsExclusive": 1,
+      "minimumConversionOpportunities": 1,
+      "lateEliminationThresholdMs": 300000,
+      "baseSeverity": 1,
+      "deviationWeight": 1,
+      "confidence": 0.9,
+      "noEliminationRelativeDeviation": 1
+    }
+  }
+}
