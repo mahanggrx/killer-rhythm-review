@@ -79,12 +79,30 @@ export function availableMetric(
   explanation: string,
   evidenceEventIds: string[],
   sampleSize: number,
+  confidence = 1,
 ): NumericMetric {
   if (!Number.isFinite(value)) {
     return unavailableMetric(
       unit,
       "non_finite_result",
       "计算结果不是有限数值，指标已停止输出。",
+      explanation,
+      evidenceEventIds,
+    );
+  }
+
+  if (
+    value < 0 ||
+    !Number.isInteger(sampleSize) ||
+    sampleSize < 0 ||
+    !Number.isFinite(confidence) ||
+    confidence < 0 ||
+    confidence > 1
+  ) {
+    return unavailableMetric(
+      unit,
+      "invalid_numeric_result",
+      "计算结果、样本量或置信度超出允许范围，指标已停止输出。",
       explanation,
       evidenceEventIds,
     );
@@ -97,6 +115,7 @@ export function availableMetric(
     explanation,
     evidenceEventIds: [...new Set(evidenceEventIds)],
     sampleSize,
+    confidence,
   };
 
   return metric;

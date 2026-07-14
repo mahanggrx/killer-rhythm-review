@@ -149,7 +149,8 @@ export function calculateHookYieldMetrics(
 
     if (
       event.type !== "survivor_outcome" ||
-      event.outcomeType !== "sacrificed"
+      event.outcomeType !== "sacrificed" ||
+      event.cause !== "standard_hook_chain"
     ) {
       continue;
     }
@@ -185,7 +186,10 @@ export function calculateHookYieldMetrics(
       "no_hook_chain_elimination",
       "没有普通挂钩链导致献祭的可用证据。",
       "从 trial_start 到首次有普通挂钩证据支持的 sacrificed 结果；与处决和流血死亡分开。",
-      standardHooks.map((hook) => hook.eventId),
+      [
+        ...(trialStart ? [trialStart.eventId] : []),
+        ...standardHooks.map((hook) => hook.eventId),
+      ],
     );
   } else {
     firstHookChainEliminationTime = availableMetric(

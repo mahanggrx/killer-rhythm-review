@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import validSample from "../data/samples/valid-base-match.json";
 import { App } from "./App";
 
 describe("App", () => {
@@ -54,5 +55,47 @@ describe("App", () => {
 
     await waitFor(() => expect(screen.getByText("fc-003")).toBeInTheDocument());
     expect(screen.getByText("追逐 ID")).toBeInTheDocument();
+  });
+
+  it("在折叠明细中展示日志语义警告的具体内容", async () => {
+    render(<App />);
+    const source = {
+      ...structuredClone(validSample),
+      unsupportedMechanics: ["hook_stage_transfer"],
+    };
+    const file = new File([JSON.stringify(source)], "warning.json", {
+      type: "application/json",
+    });
+    Object.defineProperty(file, "text", {
+      value: () => Promise.resolve(JSON.stringify(source)),
+    });
+
+    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), {
+      target: { files: [file] },
+    });
+
+    expect(await screen.findByText(/日志包含 1 条语义警告/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("完整分析明细"));
+    expect(screen.getByText(/UNSUPPORTED_MECHANICS_DECLARED/)).toBeInTheDocument();
+    expect(screen.getByText(/hook_stage_transfer|基础规则集之外的机制/)).toBeInTheDocument();
+  });
+
+  it("文件读取失败和无效阈值不会让页面崩溃或污染分析配置", async () => {
+    render(<App />);
+    const threshold = screen.getByLabelText("首次挂钩阈值");
+    fireEvent.change(threshold, { target: { value: "-1" } });
+    expect(threshold).toHaveValue(75);
+    expect(screen.getByRole("heading", { name: "首次挂钩形成较晚" })).toBeInTheDocument();
+
+    const file = new File([""], "unreadable.json", { type: "application/json" });
+    Object.defineProperty(file, "text", {
+      value: () => Promise.reject(new Error("read failed")),
+    });
+    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), {
+      target: { files: [file] },
+    });
+
+    expect(await screen.findByRole("heading", { name: "暂时无法读取这份日志" })).toBeInTheDocument();
+    expect(screen.getByText(/unreadable.json/)).toBeInTheDocument();
   });
 });

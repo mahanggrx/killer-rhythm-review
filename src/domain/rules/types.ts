@@ -24,7 +24,7 @@ export type TriggeredMetricId =
   | "generatorControl.highProgressGeneratorLosses"
   | "hookYield.totalHooks"
   | "hookYield.secondHookConversions"
-  | "hookYield.firstEliminationTime";
+  | "hookYield.firstHookChainEliminationTime";
 
 export type EvidenceOperator = ">" | ">=" | "<" | "unavailable";
 

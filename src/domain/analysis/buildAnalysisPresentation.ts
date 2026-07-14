@@ -33,17 +33,24 @@ interface MetricDefinition {
 }
 
 function seconds(milliseconds: number): string {
+  if (!Number.isFinite(milliseconds) || milliseconds < 0) return "不可用";
   const value = milliseconds / 1000;
   return `${Number.isInteger(value) ? value : value.toFixed(1)} 秒`;
 }
 
 function percent(ratio: number): string {
+  if (!Number.isFinite(ratio) || ratio < 0) return "不可用";
   const value = ratio * 100;
   return `${Number.isInteger(value) ? value : value.toFixed(1)}%`;
 }
 
 function formatMetricValue(metric: NumericMetric): string {
-  if (metric.status === "unavailable") {
+  if (
+    metric.status === "unavailable" ||
+    !Number.isFinite(metric.value) ||
+    metric.value < 0 ||
+    (metric.unit === "ratio" && metric.value > 1)
+  ) {
     return "不可用";
   }
 
@@ -99,8 +106,8 @@ function createMetricDefinitions(
     { id: "hookYield.totalHooks", group: "hookYield", label: "有效挂钩总数", metric: metrics.hookYield.totalHooks, referenceText: `规则最低样本：${hookRule.minimumTotalHooks} 次` },
     { id: "hookYield.uniqueSurvivorsHooked", group: "hookYield", label: "被挂钩逃生者数", metric: metrics.hookYield.uniqueSurvivorsHooked, referenceText: "未设置诊断阈值" },
     { id: "hookYield.secondHookConversions", group: "hookYield", label: "获救后再次上钩", metric: metrics.hookYield.secondHookConversions, referenceText: `规则参考：< ${hookRule.maximumSecondHookConversionsExclusive} 人` },
-    { id: "hookYield.firstEliminationTime", group: "hookYield", label: "首次永久减员", metric: metrics.hookYield.firstEliminationTime, referenceText: `规则参考：> ${seconds(hookRule.lateEliminationThresholdMs)}` },
-    { id: "hookYield.firstHookChainEliminationTime", group: "hookYield", label: "首次挂钩链减员", metric: metrics.hookYield.firstHookChainEliminationTime, referenceText: "未设置诊断阈值" },
+    { id: "hookYield.firstEliminationTime", group: "hookYield", label: "首次永久减员", metric: metrics.hookYield.firstEliminationTime, referenceText: "未设置诊断阈值" },
+    { id: "hookYield.firstHookChainEliminationTime", group: "hookYield", label: "首次挂钩链减员", metric: metrics.hookYield.firstHookChainEliminationTime, referenceText: `规则参考：> ${seconds(hookRule.lateEliminationThresholdMs)}` },
     { id: "hookYield.hookConcentration", group: "hookYield", label: "挂钩集中度", metric: metrics.hookYield.hookConcentration, referenceText: "未设置诊断阈值" },
   ];
 }
@@ -117,10 +124,13 @@ export function buildAnalysisPresentation(
   const preferredMetricIds: DisplayMetricId[] = feedback.ruleId === "no_clear_breakpoint"
     ? ["chase.firstChaseToFirstHook", "finding.averageSearchGap", "generatorControl.highProgressGeneratorLosses"]
     : feedback.triggeredMetricIds;
+  const maxDisplayedMetrics = Number.isInteger(ruleConfig.maxDisplayedMetrics)
+    ? Math.min(3, Math.max(1, ruleConfig.maxDisplayedMetrics))
+    : 3;
   const keyMetrics = preferredMetricIds
     .map((id) => metricMap.get(id))
     .filter((metric): metric is MetricDisplayItem => metric !== undefined)
-    .slice(0, ruleConfig.maxDisplayedMetrics);
+    .slice(0, maxDisplayedMetrics);
   const metricGroups: MetricDisplayGroup[] = (Object.keys(groupCopy) as MetricGroupId[]).map((group) => ({
     id: group,
     title: groupCopy[group],

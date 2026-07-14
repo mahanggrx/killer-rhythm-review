@@ -15,6 +15,8 @@
 
 ## 找人
 
+`target_acquired.confidence` 会进入找人指标的置信度元数据，并用于规则候选排序。原型映射为 `confirmed = 1`、`probable = 0.75`、`uncertain = 0.5`；这些权重同样属于待验证假设。
+
 | 指标 | 当前口径 |
 | --- | --- |
 | `firstFindTime` | `trial_start` 到首次人工标注 `target_acquired`。后者不是游戏正式“发现”事件。 |
@@ -25,8 +27,8 @@
 
 | 指标 | 当前口径 |
 | --- | --- |
-| `firstChaseToFirstDown` | 首次 `chase_start` 到其后首次由杀手归因的 `survivor_downed`，不包含搬运。 |
-| `firstChaseToFirstHook` | 首次 `chase_start` 到其后首次有效普通挂钩，包含抱起、搬运和挂钩。 |
+| `firstChaseToFirstDown` | 首次 `chase_start` 到同一 `chaseId`、同一逃生者在该追逐内首次由杀手归因的 `survivor_downed`，不包含搬运。 |
+| `firstChaseToFirstHook` | 首次 `chase_start` 到同一首追目标的首次有效普通挂钩，包含追逐、抱起、搬运和挂钩，不包含开局找人。 |
 | `averageChaseDuration` | 按独立 `chaseId` 配对的非删失完整追逐平均时长；未结束或 `censored` 区间不计入。 |
 | `abandonedChaseCount` | 结束原因为 `lost_los`、`range_break`、`locker` 或 `target_switch` 的完整追逐数。名称沿用原型字段，但结果不声称知道玩家是否主观放弃。 |
 
@@ -47,12 +49,12 @@
 | `uniqueSurvivorsHooked` | 至少发生过一次有效普通挂钩的不同逃生者数量。 |
 | `secondHookConversions` | 首次有效普通挂钩后成功离钩，并在其后再次有效上钩的逃生者数量；`sampleSize` 是形成过再次上钩机会的逃生者数，供规则判断最低样本。 |
 | `firstEliminationTime` | 从 `trial_start` 到首次永久减员；献祭、处决或流血死亡均可计入，BOT 接管和逃脱不计。 |
-| `firstHookChainEliminationTime` | 从 `trial_start` 到首次有此前普通挂钩证据支持的献祭结果；与处决和流血死亡分开。 |
+| `firstHookChainEliminationTime` | 从 `trial_start` 到首次明确标记 `standard_hook_chain` 且有此前普通挂钩证据支持的献祭结果；与处决和流血死亡分开。 |
 | `hookConcentration` | 最高单个逃生者的有效普通挂钩数除以总有效普通挂钩数；无挂钩时因零分母而不可用。 |
 
-## 尚未覆盖
+## 实现边界与尚未覆盖
 
 - 当前指标入口假定日志已先通过结构和语义校验；兜底诊断不能替代正式校验。
-- 尚未实现对局结束时自动生成未闭合追逐和回退的 `censored` 关闭事件。
+- 倒地时缺失的追逐结束可按声明策略生成；对局结束时未闭合追逐和回退会生成可追溯的 `censored` 关闭事件。
 - 尚未计算发电机活跃回退累计时长或覆盖率。
-- 指标尚未接入规则引擎或 React 页面。
+- 指标已通过统一分析入口接入规则引擎和 React 页面；React 只消费分析结果，不直接计算指标。

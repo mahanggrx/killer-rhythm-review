@@ -29,7 +29,20 @@ interface RankedCandidate {
 }
 
 function isAvailable(metric: NumericMetric): metric is AvailableMetric {
-  return metric.status === "available";
+  return (
+    metric.status === "available" &&
+    Number.isFinite(metric.value) &&
+    metric.value >= 0 &&
+    Number.isInteger(metric.sampleSize) &&
+    metric.sampleSize >= 0 &&
+    Number.isFinite(metric.confidence) &&
+    metric.confidence >= 0 &&
+    metric.confidence <= 1
+  );
+}
+
+function evidenceSufficiency(sampleSize: number, minimumSampleSize: number): number {
+  return sampleSize / (sampleSize + minimumSampleSize);
 }
 
 function noClearBreakpoint(): NoClearBreakpointFeedback {
@@ -181,10 +194,10 @@ function evaluateFirstChaseRule(
     "FIRST_CHASE_TOO_LONG",
     [buildEvidence(metricId, metric, ">", rule.thresholdMs)],
     relativeDeviation,
-    Math.min(1, metric.sampleSize / rule.minimumSampleSize),
+    evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
     rule.baseSeverity,
     rule.deviationWeight,
-    rule.confidence,
+    rule.confidence * metric.confidence,
     context,
     config,
   );
@@ -227,10 +240,10 @@ function evaluateSearchGapRule(
     "SEARCH_GAP_TOO_LONG",
     [buildEvidence(metricId, metric, ">", rule.thresholdMs)],
     relativeDeviation,
-    Math.min(1, metric.sampleSize / rule.minimumSampleSize),
+    evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
     rule.baseSeverity,
     rule.deviationWeight,
-    rule.confidence,
+    rule.confidence * metric.confidence,
     context,
     config,
   );
@@ -274,10 +287,10 @@ function evaluateGeneratorRule(
     "GENERATOR_CONTROL_WEAK",
     [buildEvidence(metricId, metric, ">=", rule.minimumLosses)],
     relativeDeviation,
-    Math.min(1, metric.sampleSize / rule.minimumSampleSize),
+    evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
     rule.baseSeverity,
     rule.deviationWeight,
-    rule.confidence,
+    rule.confidence * metric.confidence,
     context,
     config,
   );
@@ -297,10 +310,10 @@ function evaluateHookPressureRule(
 
   const totalHooks = metrics.hookYield.totalHooks;
   const conversions = metrics.hookYield.secondHookConversions;
-  const elimination = metrics.hookYield.firstEliminationTime;
+  const elimination = metrics.hookYield.firstHookChainEliminationTime;
   const totalHooksId = "hookYield.totalHooks" as const;
   const conversionsId = "hookYield.secondHookConversions" as const;
-  const eliminationId = "hookYield.firstEliminationTime" as const;
+  const eliminationId = "hookYield.firstHookChainEliminationTime" as const;
 
   if (!isAvailable(totalHooks)) {
     addUnavailableDiagnostic(
@@ -336,7 +349,7 @@ function evaluateHookPressureRule(
 
   const noElimination =
     elimination.status === "unavailable" &&
-    elimination.reason.code === "no_elimination_event";
+    elimination.reason.code === "no_hook_chain_elimination";
   const lateElimination =
     isAvailable(elimination) &&
     elimination.value > rule.lateEliminationThresholdMs;
@@ -387,13 +400,19 @@ function evaluateHookPressureRule(
     evidence,
     relativeDeviation,
     Math.min(
-      1,
-      totalHooks.value / rule.minimumTotalHooks,
-      conversions.sampleSize / rule.minimumConversionOpportunities,
+      evidenceSufficiency(totalHooks.sampleSize, rule.minimumTotalHooks),
+      evidenceSufficiency(
+        conversions.sampleSize,
+        rule.minimumConversionOpportunities,
+      ),
     ),
     rule.baseSeverity,
     rule.deviationWeight,
-    rule.confidence,
+    rule.confidence * Math.min(
+      totalHooks.confidence,
+      conversions.confidence,
+      isAvailable(elimination) ? elimination.confidence : 1,
+    ),
     context,
     config,
   );
@@ -405,7 +424,6 @@ function compareCandidates(
 ): number {
   return (
     right.evidenceSufficiency - left.evidenceSufficiency ||
-    right.severityScore - left.severityScore ||
     right.relativeDeviation - left.relativeDeviation ||
     right.confidence - left.confidence ||
     left.priority - right.priority ||
