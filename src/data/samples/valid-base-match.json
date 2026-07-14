@@ -1,0 +1,254 @@
+{
+  "schemaVersion": "1.0",
+  "ruleset": "base_only_1v4_10.0.2",
+  "patch": "10.0.2",
+  "matchId": "sample-valid-001",
+  "durationMs": 240000,
+  "survivors": ["survivor-1", "survivor-2", "survivor-3", "survivor-4"],
+  "generators": [
+    "generator-1",
+    "generator-2",
+    "generator-3",
+    "generator-4",
+    "generator-5",
+    "generator-6",
+    "generator-7"
+  ],
+  "unsupportedMechanics": [],
+  "events": [
+    {
+      "eventId": "event-001",
+      "timestampMs": 0,
+      "eventOrder": 0,
+      "type": "trial_start"
+    },
+    {
+      "eventId": "event-002",
+      "timestampMs": 10000,
+      "eventOrder": 1,
+      "type": "target_acquired",
+      "survivorId": "survivor-1",
+      "evidenceType": "direct_los",
+      "confidence": "confirmed",
+      "observerNote": "杀手确认目标位置并开始接近。"
+    },
+    {
+      "eventId": "event-003",
+      "timestampMs": 12000,
+      "eventOrder": 2,
+      "type": "chase_start",
+      "chaseId": "chase-1",
+      "survivorId": "survivor-1",
+      "source": "game_state"
+    },
+    {
+      "eventId": "event-004",
+      "timestampMs": 30000,
+      "eventOrder": 3,
+      "type": "generator_repair_started",
+      "generatorId": "generator-1",
+      "survivorId": "survivor-2",
+      "progress": 0.2
+    },
+    {
+      "eventId": "event-005",
+      "timestampMs": 60000,
+      "eventOrder": 4,
+      "type": "survivor_downed",
+      "survivorId": "survivor-1",
+      "fromState": "injured",
+      "cause": "basic_attack",
+      "attribution": "killer",
+      "sourceId": "killer"
+    },
+    {
+      "eventId": "event-006",
+      "timestampMs": 60000,
+      "eventOrder": 5,
+      "type": "chase_end",
+      "chaseId": "chase-1",
+      "survivorId": "survivor-1",
+      "endReason": "target_downed",
+      "censored": false,
+      "policyGenerated": false
+    },
+    {
+      "eventId": "event-007",
+      "timestampMs": 65000,
+      "eventOrder": 6,
+      "type": "survivor_picked_up",
+      "survivorId": "survivor-1",
+      "priorHealthState": "dying",
+      "pickupMethod": "ground"
+    },
+    {
+      "eventId": "event-008",
+      "timestampMs": 68000,
+      "eventOrder": 7,
+      "type": "generator_repair_stopped",
+      "generatorId": "generator-1",
+      "survivorId": "survivor-2",
+      "progress": 0.75,
+      "reason": "forced_off"
+    },
+    {
+      "eventId": "event-009",
+      "timestampMs": 70000,
+      "eventOrder": 8,
+      "type": "hook_completed",
+      "survivorId": "survivor-1",
+      "hookId": "hook-1",
+      "stageBefore": 0,
+      "stageAfter": 1,
+      "hookNumber": 1,
+      "isDeathHook": false,
+      "isStandardHook": true
+    },
+    {
+      "eventId": "event-010",
+      "timestampMs": 71000,
+      "eventOrder": 9,
+      "type": "generator_progress_delta",
+      "generatorId": "generator-1",
+      "delta": -0.05,
+      "progressBefore": 0.75,
+      "progressAfter": 0.7,
+      "cause": "killer_kick",
+      "sourceId": "killer",
+      "applied": true,
+      "killerCaused": true,
+      "interferenceId": "interference-1"
+    },
+    {
+      "eventId": "event-011",
+      "timestampMs": 71000,
+      "eventOrder": 10,
+      "type": "generator_regression_started",
+      "regressionId": "regression-1",
+      "interferenceId": "interference-1",
+      "generatorId": "generator-1",
+      "progress": 0.7,
+      "source": "killer_kick",
+      "regressionEventIndex": 1
+    },
+    {
+      "eventId": "event-012",
+      "timestampMs": 85000,
+      "eventOrder": 11,
+      "type": "target_acquired",
+      "survivorId": "survivor-2",
+      "evidenceType": "scratch_marks",
+      "confidence": "probable",
+      "observerNote": "杀手根据足迹确认下一名目标的移动方向。"
+    },
+    {
+      "eventId": "event-013",
+      "timestampMs": 90000,
+      "eventOrder": 12,
+      "type": "chase_start",
+      "chaseId": "chase-2",
+      "survivorId": "survivor-2",
+      "source": "game_state"
+    },
+    {
+      "eventId": "event-014",
+      "timestampMs": 100000,
+      "eventOrder": 13,
+      "type": "survivor_unhooked",
+      "survivorId": "survivor-1",
+      "rescuerId": "survivor-3",
+      "method": "rescued",
+      "stageAtRelease": 1
+    },
+    {
+      "eventId": "event-015",
+      "timestampMs": 110000,
+      "eventOrder": 14,
+      "type": "generator_repair_started",
+      "generatorId": "generator-1",
+      "survivorId": "survivor-4",
+      "progress": 0.68
+    },
+    {
+      "eventId": "event-016",
+      "timestampMs": 110000,
+      "eventOrder": 15,
+      "type": "generator_regression_paused",
+      "regressionId": "regression-1",
+      "generatorId": "generator-1",
+      "progress": 0.68,
+      "reason": "repairing"
+    },
+    {
+      "eventId": "event-017",
+      "timestampMs": 120000,
+      "eventOrder": 16,
+      "type": "generator_regression_stopped",
+      "regressionId": "regression-1",
+      "generatorId": "generator-1",
+      "progress": 0.73,
+      "reason": "repaired_5_percent",
+      "censored": false
+    },
+    {
+      "eventId": "event-018",
+      "timestampMs": 130000,
+      "eventOrder": 17,
+      "type": "generator_repair_stopped",
+      "generatorId": "generator-1",
+      "survivorId": "survivor-4",
+      "progress": 0.8,
+      "reason": "voluntary"
+    },
+    {
+      "eventId": "event-019",
+      "timestampMs": 140000,
+      "eventOrder": 18,
+      "type": "generator_completed",
+      "generatorId": "generator-1",
+      "completionIndex": 1,
+      "progress": 1,
+      "contributors": ["survivor-2", "survivor-4"]
+    },
+    {
+      "eventId": "event-020",
+      "timestampMs": 150000,
+      "eventOrder": 19,
+      "type": "chase_end",
+      "chaseId": "chase-2",
+      "survivorId": "survivor-2",
+      "endReason": "target_switch",
+      "censored": false,
+      "policyGenerated": false
+    },
+    {
+      "eventId": "event-021",
+      "timestampMs": 200000,
+      "eventOrder": 20,
+      "type": "controller_changed",
+      "survivorId": "survivor-4",
+      "from": "human",
+      "to": "bot",
+      "reason": "disconnect"
+    },
+    {
+      "eventId": "event-022",
+      "timestampMs": 220000,
+      "eventOrder": 21,
+      "type": "survivor_outcome",
+      "survivorId": "survivor-1",
+      "outcomeType": "escaped",
+      "cause": "fixture_exit",
+      "attribution": "survivor"
+    },
+    {
+      "eventId": "event-023",
+      "timestampMs": 240000,
+      "eventOrder": 22,
+      "type": "trial_end",
+      "reason": "fixture_complete",
+      "normalEnd": true
+    }
+  ]
+}
+

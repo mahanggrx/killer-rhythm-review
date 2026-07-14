@@ -1,0 +1,45 @@
+{
+  "schemaVersion": "1.0",
+  "ruleset": "base_only_1v4_10.0.2",
+  "patch": "10.0.2",
+  "matchId": "sample-invalid-001",
+  "durationMs": 100000,
+  "survivors": ["survivor-1", "survivor-2", "survivor-3", "survivor-4"],
+  "generators": [
+    "generator-1",
+    "generator-2",
+    "generator-3",
+    "generator-4",
+    "generator-5",
+    "generator-6",
+    "generator-7"
+  ],
+  "unsupportedMechanics": [],
+  "events": [
+    {
+      "eventId": "duplicate-event",
+      "timestampMs": -1,
+      "eventOrder": 0,
+      "type": "trial_start"
+    },
+    {
+      "eventId": "duplicate-event",
+      "timestampMs": 1000,
+      "eventOrder": 0,
+      "type": "unsupported_event"
+    },
+    {
+      "eventId": "event-invalid-progress",
+      "timestampMs": 2000,
+      "eventOrder": 2,
+      "type": "generator_progress_delta",
+      "generatorId": "generator-1",
+      "delta": -0.1,
+      "progressBefore": 1.2,
+      "progressAfter": 1.1,
+      "cause": "invalid_fixture",
+      "applied": true,
+      "killerCaused": true
+    }
+  ]
+}
