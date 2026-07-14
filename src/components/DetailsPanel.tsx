@@ -1,4 +1,5 @@
 import type { MetricDisplayGroup } from "../domain/analysis";
+import type { ValidationIssue } from "../domain/log";
 import type { MatchMetrics } from "../domain/metrics";
 import type { RuleEngineResult } from "../domain/rules";
 
@@ -6,9 +7,10 @@ interface DetailsPanelProps {
   groups: readonly MetricDisplayGroup[];
   metrics: MatchMetrics;
   rules: RuleEngineResult;
+  warnings: readonly ValidationIssue[];
 }
 
-export function DetailsPanel({ groups, metrics, rules }: DetailsPanelProps) {
+export function DetailsPanel({ groups, metrics, rules, warnings }: DetailsPanelProps) {
   return (
     <details className="details-panel">
       <summary>
@@ -19,6 +21,18 @@ export function DetailsPanel({ groups, metrics, rules }: DetailsPanelProps) {
         <span className="details-panel__hint">默认折叠</span>
       </summary>
       <div className="details-panel__content">
+        {warnings.length > 0 && (
+          <section className="diagnostic-list" aria-labelledby="log-warning-title">
+            <h3 id="log-warning-title">日志语义警告</h3>
+            <ul>
+              {warnings.map((item, index) => (
+                <li key={`${item.code}-${index}`}>
+                  <strong>{item.code}</strong> · {item.path} · {item.message}
+                </li>
+              ))}
+            </ul>
+          </section>
+        )}
         <div className="all-metrics">
           {groups.map((group) => (
             <section key={group.id}>
@@ -44,7 +58,7 @@ export function DetailsPanel({ groups, metrics, rules }: DetailsPanelProps) {
         <section className="rule-detail" aria-labelledby="rule-detail-title">
           <p className="section-kicker">确定性规则</p>
           <h3 id="rule-detail-title">{rules.primaryFeedback.ruleId}</h3>
-          <p>共触发 {rules.triggeredCandidates.length} 条候选规则，按证据充分性、相对阈值偏离、置信度、玩家阶段优先级与稳定 ID 排序。</p>
+          <p>共触发 {rules.triggeredCandidates.length} 条候选规则，按有效样本形成的证据充分性、相对阈值偏离、事件证据置信度、玩家阶段同等证据优先级与稳定 ID 排序。</p>
           {rules.triggeredCandidates.length > 0 && (
             <ol>{rules.triggeredCandidates.map((candidate) => <li key={candidate.ruleId}><strong>{candidate.ruleId}</strong><span>{candidate.title}</span></li>)}</ol>
           )}

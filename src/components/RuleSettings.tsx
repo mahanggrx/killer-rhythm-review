@@ -58,8 +58,8 @@ export function RuleSettings({ experience, metricConfig, ruleConfig, onExperienc
       <label className="field-control">
         <span>分析阶段</span>
         <select value={experience} onChange={(event) => onExperienceChange(event.target.value as PlayerExperience)}>
-          <option value="novice">新手 · 优先找人与追击</option>
-          <option value="intermediate">进阶 · 优先控机与挂钩收益</option>
+          <option value="novice">新手 · 同等证据下优先找人与追击</option>
+          <option value="intermediate">进阶 · 同等证据下优先控机与挂钩收益</option>
         </select>
       </label>
       <label className="field-control field-control--inline">

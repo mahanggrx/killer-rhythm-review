@@ -236,6 +236,7 @@ select { width: 100%; padding: 0 40px 0 12px; }
 .timeline-event:hover .timeline-event__node,
 .timeline-event.is-selected .timeline-event__node { transform: scale(1.35); }
 .timeline-event--acquired .timeline-event__node { background: var(--blue); }
+.timeline-event--match .timeline-event__node { background: #aeb4be; }
 .timeline-event--chase .timeline-event__node { background: var(--violet); }
 .timeline-event--down .timeline-event__node { background: var(--accent); }
 .timeline-event--hook .timeline-event__node { background: var(--gold); }

@@ -165,6 +165,7 @@ export function calculateGeneratorControlMetrics(
   const states = new Map<string, GeneratorProgressState>();
   const lostGeneratorIds = new Set<string>();
   const lossEvidenceIds: string[] = [];
+  let highProgressEpisodeCount = 0;
 
   const getState = (generatorId: string): GeneratorProgressState => {
     const existing = states.get(generatorId);
@@ -221,6 +222,7 @@ export function calculateGeneratorControlMetrics(
       interferenceProgress >= highProgressThreshold &&
       state.episode === null
     ) {
+      highProgressEpisodeCount += 1;
       state.episode = {
         startEventId: event.eventId,
         interfered: false,
@@ -246,6 +248,7 @@ export function calculateGeneratorControlMetrics(
       observedProgress >= highProgressThreshold &&
       state.episode === null
     ) {
+      highProgressEpisodeCount += 1;
       state.episode = {
         startEventId: event.eventId,
         interfered: false,
@@ -264,7 +267,7 @@ export function calculateGeneratorControlMetrics(
       "count",
       `进入高进度 episode 后，在下一次有效杀手干扰前完成的不同发电机数量；允许同一台发电机多次跨越阈值。${explanationSuffix}`,
       lossEvidenceIds,
-      lostGeneratorIds.size,
+      highProgressEpisodeCount,
     ),
     keyGeneratorInterruptions: availableMetric(
       qualifyingInterferences.size,

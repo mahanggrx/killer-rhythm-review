@@ -8,6 +8,7 @@ import {
   type ValidationIssue,
   type ValidationResult,
 } from "./types";
+import { validateMatchSemantics } from "./validateMatchSemantics";
 
 type UnknownRecord = Record<string, unknown>;
 
@@ -352,11 +353,14 @@ function validateUnsupportedMechanics(
   });
 
   if (value.length > 0) {
+    const declaredMechanics = value
+      .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      .join("、");
     warning(
       warnings,
       "UNSUPPORTED_MECHANICS_DECLARED",
       "$.unsupportedMechanics",
-      "日志声明了基础规则集之外的机制，后续分析阶段必须警告或拒绝处理",
+      `日志声明了基础规则集之外的机制：${declaredMechanics}。分析结果仅适用于基础规则集。`,
     );
   }
 }
@@ -848,6 +852,9 @@ function validateEventFields(
         eventIndex,
       );
       requireBoolean(event, "censored", path, errors, eventIndex);
+      if (event.policyGenerated !== undefined) {
+        requireBoolean(event, "policyGenerated", path, errors, eventIndex);
+      }
       return;
 
     case "generator_blocked": {
@@ -1195,9 +1202,18 @@ export function validateMatchLog(input: unknown): ValidationResult<MatchLog> {
     return { ok: false, data: null, errors, warnings };
   }
 
+  const data = input as unknown as MatchLog;
+  const semanticValidation = validateMatchSemantics(data);
+  errors.push(...semanticValidation.errors);
+  warnings.push(...semanticValidation.warnings);
+
+  if (errors.length > 0) {
+    return { ok: false, data: null, errors, warnings };
+  }
+
   return {
     ok: true,
-    data: input as unknown as MatchLog,
+    data,
     errors,
     warnings,
   };

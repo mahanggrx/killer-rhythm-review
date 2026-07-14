@@ -227,6 +227,7 @@ export interface GeneratorRegressionStoppedEvent
   progress: ProgressRatio;
   reason: "repaired_5_percent" | "zero" | "completed" | "trial_end";
   censored: boolean;
+  policyGenerated?: boolean;
 }
 
 export interface GeneratorBlockedEvent

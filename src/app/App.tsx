@@ -33,6 +33,7 @@ export function App() {
   const [metricConfig, setMetricConfig] = useState<MetricConfig>(cloneDefaultMetricConfig);
   const [ruleConfig, setRuleConfig] = useState<RuleEngineConfig>(cloneDefaultRuleConfig);
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const analysis = useMemo(
@@ -47,15 +48,21 @@ export function App() {
     setSourceName(preset.label);
     setSource(preset.source);
     setSelectedEventId(null);
+    setUploadError(null);
   };
 
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
-    const uploadedSource = await file.text();
-    setSelectedPresetId("uploaded");
-    setSourceName(file.name);
-    setSource(uploadedSource);
-    setSelectedEventId(null);
+    try {
+      const uploadedSource = await file.text();
+      setSelectedPresetId("uploaded");
+      setSourceName(file.name);
+      setSource(uploadedSource);
+      setSelectedEventId(null);
+      setUploadError(null);
+    } catch {
+      setUploadError(`无法读取文件“${file.name}”，请重新选择本地 JSON 文件。`);
+    }
   };
 
   const handleRuleToggle = (ruleId: RuleId, enabled: boolean) => {
@@ -160,7 +167,16 @@ export function App() {
 
         <div className="workspace-layout">
           <div className="analysis-column">
-            {analysis.status === "invalid" ? (
+            {uploadError ? (
+              <section className="error-panel" role="alert" aria-labelledby="upload-error-title">
+                <Icon name="warning" />
+                <div>
+                  <p className="section-kicker">文件读取失败</p>
+                  <h2 id="upload-error-title">暂时无法读取这份日志</h2>
+                  <p>{uploadError}</p>
+                </div>
+              </section>
+            ) : analysis.status === "invalid" ? (
               <section className="error-panel" role="alert" aria-labelledby="error-title">
                 <Icon name="warning" />
                 <div>
@@ -168,6 +184,12 @@ export function App() {
                   <h2 id="error-title">暂时无法分析这份日志</h2>
                   <p>请修正以下结构问题。输入错误已被安全拦截，页面和已设置的规则不会丢失。</p>
                   <ul>{analysis.errors.map((issue, index) => <li key={`${issue.code}-${index}`}><strong>{issue.path}</strong>{issue.message}</li>)}</ul>
+                  {analysis.warnings.length > 0 && (
+                    <>
+                      <p>同时检测到以下语义警告：</p>
+                      <ul>{analysis.warnings.map((issue, index) => <li key={`warning-${issue.code}-${index}`}><strong>{issue.path}</strong>{issue.message}</li>)}</ul>
+                    </>
+                  )}
                 </div>
               </section>
             ) : (
@@ -181,7 +203,7 @@ export function App() {
                 <PrimaryFeedbackPanel feedback={analysis.presentation.feedback} onViewEvidence={viewEvidence} />
                 <MetricCards metrics={analysis.presentation.keyMetrics} />
                 <EventTimeline items={analysis.timeline} selectedEventId={selectedEventId} onSelect={setSelectedEventId} />
-                <DetailsPanel groups={analysis.presentation.metricGroups} metrics={analysis.metrics} rules={analysis.rules} />
+                <DetailsPanel groups={analysis.presentation.metricGroups} metrics={analysis.metrics} rules={analysis.rules} warnings={analysis.warnings} />
               </>
             )}
           </div>

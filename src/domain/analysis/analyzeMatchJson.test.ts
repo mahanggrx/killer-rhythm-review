@@ -22,6 +22,10 @@ describe("analyzeMatchJson", () => {
     expect(result.rules.primaryFeedback.ruleId).toBe(preset.expectedPrimaryRuleId);
     expect(result.presentation.keyMetrics.length).toBeLessThanOrEqual(3);
     expect(result.timeline.every((item, index, items) => index === 0 || item.timestampMs >= items[index - 1].timestampMs)).toBe(true);
+    const timelineEvidence = new Set(
+      result.timeline.filter((item) => item.isEvidence).map((item) => item.eventId),
+    );
+    expect(result.rules.primaryFeedback.evidenceEventIds.every((eventId) => timelineEvidence.has(eventId))).toBe(true);
   });
 
   it("三份样例的核心指标与人工计算一致", () => {
@@ -68,6 +72,11 @@ describe("analyzeMatchJson", () => {
 
     expect(result.status).toBe("ready");
     if (result.status !== "ready") return;
-    expect(result.timeline.filter((item) => item.isEvidence).map((item) => item.eventId)).toEqual(["fc-003", "fc-007"]);
+    expect(result.timeline.filter((item) => item.isEvidence).map((item) => item.eventId)).toEqual([
+      "fc-003",
+      "fc-004",
+      "fc-005",
+      "fc-007",
+    ]);
   });
 });

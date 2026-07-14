@@ -1,6 +1,7 @@
 import type { MatchEventType } from "../log";
 
 export type TimelineEventKind =
+  | "match"
   | "acquired"
   | "chase"
   | "down"

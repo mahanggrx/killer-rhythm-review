@@ -84,45 +84,82 @@ export function calculateChaseMetrics(
       "从第一次 chase_start 到其后首次有效普通挂钩的首轮转化耗时，包含搬运和挂钩。",
     );
   } else {
-    const laterEvents = events.slice(firstChaseIndex + 1);
-    const firstDown = laterEvents.find(
-      (event) =>
-        event.type === "survivor_downed" && event.attribution === "killer",
+    const firstChaseEndIndex = events.findIndex(
+      (event, index) =>
+        index > firstChaseIndex &&
+        event.type === "chase_end" &&
+        event.chaseId === firstChase.chaseId &&
+        event.survivorId === firstChase.survivorId,
     );
-    const firstHook = laterEvents.find(
-      (event) => event.type === "hook_completed" && event.isStandardHook,
-    );
+    const firstChaseEnd =
+      firstChaseEndIndex >= 0 && events[firstChaseEndIndex].type === "chase_end"
+        ? events[firstChaseEndIndex]
+        : null;
+    const convertedByDown =
+      firstChaseEnd !== null &&
+      !firstChaseEnd.censored &&
+      firstChaseEnd.endReason === "target_downed";
+    const firstDownIndex = convertedByDown
+      ? events.findIndex(
+          (event, index) =>
+            index > firstChaseIndex &&
+            index <= firstChaseEndIndex &&
+            event.type === "survivor_downed" &&
+            event.survivorId === firstChase.survivorId &&
+            event.attribution === "killer",
+        )
+      : -1;
+    const firstDown =
+      firstDownIndex >= 0 && events[firstDownIndex].type === "survivor_downed"
+        ? events[firstDownIndex]
+        : null;
+    const firstHook = firstDown
+      ? events
+          .slice(Math.max(firstDownIndex, firstChaseEndIndex) + 1)
+          .find(
+            (event) =>
+              event.type === "hook_completed" &&
+              event.isStandardHook &&
+              event.survivorId === firstChase.survivorId,
+          )
+      : null;
+    const chaseEvidence = [
+      firstChase.eventId,
+      ...(firstChaseEnd ? [firstChaseEnd.eventId] : []),
+    ];
 
     firstChaseToFirstDown = firstDown
       ? availableMetric(
           firstDown.timestampMs - firstChase.timestampMs,
           "milliseconds",
-          "从第一次 chase_start 到其后首次由杀手造成的 survivor_downed；不包含搬运时间。",
-          [firstChase.eventId, firstDown.eventId],
+          "从第一次 chase_start 到同一 chaseId、同一逃生者在该追逐内首次由杀手造成的 survivor_downed；不包含搬运时间。",
+          [firstChase.eventId, firstDown.eventId, ...(firstChaseEnd ? [firstChaseEnd.eventId] : [])],
           1,
         )
       : unavailableMetric(
           "milliseconds",
           "missing_first_down",
-          "第一次追逐开始后没有可用的杀手归因倒地事件。",
-          "从第一次 chase_start 到其后首次由杀手造成的倒地时间。",
-          [firstChase.eventId],
+          "第一次追逐没有以同一目标倒地形成可验证的转化，或该追逐已被删失。",
+          "仅关联第一次 chase_start 对应 chaseId 和 survivorId 内的杀手归因倒地。",
+          chaseEvidence,
         );
 
     firstChaseToFirstHook = firstHook
       ? availableMetric(
           firstHook.timestampMs - firstChase.timestampMs,
           "milliseconds",
-          "从第一次 chase_start 到其后首次有效普通挂钩，包含追逐结束后的抱起、搬运和挂钩。",
-          [firstChase.eventId, firstHook.eventId],
+          "从第一次 chase_start 到同一首追目标的首次有效普通挂钩，包含该目标倒地后的抱起、搬运和挂钩。",
+          [firstChase.eventId, ...(firstDown ? [firstDown.eventId] : []), ...(firstChaseEnd ? [firstChaseEnd.eventId] : []), firstHook.eventId],
           1,
         )
       : unavailableMetric(
           "milliseconds",
           "missing_first_hook",
-          "第一次追逐开始后没有有效普通挂钩事件。",
-          "从第一次 chase_start 到其后首次有效普通挂钩的首轮转化耗时。",
-          [firstChase.eventId],
+          firstDown
+            ? "第一次追逐目标倒地后没有形成该目标的有效普通挂钩。"
+            : "第一次追逐没有形成同一目标的可验证倒地，不能继续关联挂钩。",
+          "从第一次 chase_start 到同一首追目标首次有效普通挂钩的首轮转化耗时。",
+          [...chaseEvidence, ...(firstDown ? [firstDown.eventId] : [])],
         );
   }
 
@@ -166,11 +203,8 @@ export function calculateChaseMetrics(
           abandonedChases.length,
           "count",
           "统计结束原因为目标丢失、距离中断、进入柜子或转火的完整追逐；该指标不等同于认定玩家主动放弃。",
-          abandonedChases.flatMap((chase) => [
-            chase.start.eventId,
-            chase.end.eventId,
-          ]),
-          abandonedChases.length,
+          completeEvidenceIds,
+          completeChases.length,
         );
 
   return {

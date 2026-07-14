@@ -53,6 +53,7 @@ describe("calculateMatchMetrics", () => {
     expectAvailable(result.chase.firstChaseToFirstHook, 58_000);
     expectAvailable(result.chase.averageChaseDuration, 54_000);
     expectAvailable(result.chase.abandonedChaseCount, 1);
+    expect(result.chase.abandonedChaseCount.sampleSize).toBe(2);
 
     expectAvailable(
       result.generatorControl.highProgressGeneratorLosses,
@@ -283,6 +284,101 @@ describe("calculateMatchMetrics", () => {
     expectAvailable(result.chase.abandonedChaseCount, 1);
   });
 
+  it("首追转化不会串联到另一名逃生者的挂钩", () => {
+    const log = cloneValidLog();
+    log.events = log.events.map((event) =>
+      event.type === "hook_completed" && event.eventId === "event-009"
+        ? { ...event, survivorId: "survivor-2" }
+        : event,
+    );
+
+    const result = calculateMatchMetrics(log, CONFIG);
+
+    expectAvailable(result.chase.firstChaseToFirstDown, 48_000);
+    expectUnavailable(result.chase.firstChaseToFirstHook, "missing_first_hook");
+  });
+
+  it("BOT 接管不会被计算为永久减员", () => {
+    const log = cloneValidLog();
+    log.events = log.events.filter((event) => event.type !== "survivor_outcome");
+
+    const result = calculateMatchMetrics(log, CONFIG);
+
+    expectUnavailable(result.hookYield.firstEliminationTime, "no_elimination_event");
+    expect(log.events.some((event) => event.type === "controller_changed")).toBe(true);
+  });
+
+  it("目标确认置信度进入找人指标元数据", () => {
+    const log = cloneValidLog();
+    log.events = log.events.map((event) =>
+      event.type === "target_acquired" && event.eventId === "event-012"
+        ? { ...event, confidence: "uncertain" as const }
+        : event,
+    );
+
+    const result = calculateMatchMetrics(log, CONFIG);
+
+    expect(result.finding.averageSearchGap).toEqual(
+      expect.objectContaining({ status: "available", confidence: 0.5 }),
+    );
+  });
+
+  it("高进度发电机丢失的样本量表示高进度 episode 数", () => {
+    const log = cloneValidLog();
+    log.events = log.events.filter((event) => !event.type.startsWith("generator_"));
+    log.events.push(
+      {
+        eventId: "episode-1",
+        timestampMs: 40_000,
+        eventOrder: 30,
+        type: "generator_repair_stopped",
+        generatorId: "generator-1",
+        survivorId: "survivor-2",
+        progress: 0.8,
+        reason: "voluntary",
+      },
+      {
+        eventId: "episode-1-interference",
+        timestampMs: 50_000,
+        eventOrder: 31,
+        type: "generator_progress_delta",
+        generatorId: "generator-1",
+        delta: -0.2,
+        progressBefore: 0.8,
+        progressAfter: 0.6,
+        cause: "killer_interference",
+        applied: true,
+        killerCaused: true,
+        interferenceId: "interference-episode-1",
+      },
+      {
+        eventId: "episode-2",
+        timestampMs: 80_000,
+        eventOrder: 32,
+        type: "generator_repair_stopped",
+        generatorId: "generator-1",
+        survivorId: "survivor-3",
+        progress: 0.8,
+        reason: "voluntary",
+      },
+      {
+        eventId: "episode-2-complete",
+        timestampMs: 90_000,
+        eventOrder: 33,
+        type: "generator_completed",
+        generatorId: "generator-1",
+        completionIndex: 1,
+        progress: 1,
+        contributors: ["survivor-3"],
+      },
+    );
+
+    const result = calculateMatchMetrics(log, CONFIG);
+
+    expectAvailable(result.generatorControl.highProgressGeneratorLosses, 1);
+    expect(result.generatorControl.highProgressGeneratorLosses.sampleSize).toBe(2);
+  });
+
   it("只把首挂获救后的再次上钩计为转化，并区分挂钩链减员", () => {
     const log = cloneValidLog();
     log.events.push({
@@ -326,6 +422,46 @@ describe("calculateMatchMetrics", () => {
       result.hookYield.firstHookChainEliminationTime,
       230_000,
     );
+  });
+
+  it("普通献祭必须有明确 standard_hook_chain 原因才计入挂钩链减员", () => {
+    const log = cloneValidLog();
+    log.events = log.events.map((event) =>
+      event.type === "survivor_outcome"
+        ? {
+            ...event,
+            outcomeType: "sacrificed" as const,
+            cause: "unverified_sacrifice",
+            attribution: "killer" as const,
+          }
+        : event,
+    );
+
+    const result = calculateMatchMetrics(log, CONFIG);
+
+    expectAvailable(result.hookYield.firstEliminationTime, 220_000);
+    expectUnavailable(
+      result.hookYield.firstHookChainEliminationTime,
+      "no_hook_chain_elimination",
+    );
+  });
+
+  it("底层指标入口拒绝负数结果", () => {
+    const log = cloneValidLog();
+    log.events.push({
+      eventId: "negative-elimination",
+      timestampMs: -1,
+      eventOrder: 99,
+      type: "survivor_outcome",
+      survivorId: "survivor-2",
+      outcomeType: "killed",
+      cause: "invalid_direct_input",
+      attribution: "killer",
+    });
+
+    const result = calculateMatchMetrics(log, CONFIG);
+
+    expectUnavailable(result.hookYield.firstEliminationTime, "invalid_numeric_result");
   });
 
   it("接受阈值边界并拒绝无效阈值，不产生 NaN 或 Infinity", () => {

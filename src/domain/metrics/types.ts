@@ -16,7 +16,8 @@ export type MetricUnavailableReasonCode =
   | "no_elimination_event"
   | "no_hook_chain_elimination"
   | "no_hooks_for_concentration"
-  | "non_finite_result";
+  | "non_finite_result"
+  | "invalid_numeric_result";
 
 export interface MetricUnavailableReason {
   code: MetricUnavailableReasonCode;
@@ -30,6 +31,7 @@ export interface AvailableMetric {
   explanation: string;
   evidenceEventIds: EventId[];
   sampleSize: number;
+  confidence: number;
 }
 
 export interface UnavailableMetric {
