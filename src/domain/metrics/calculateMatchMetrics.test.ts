@@ -66,6 +66,11 @@ describe("calculateMatchMetrics", () => {
     expectAvailable(result.hookYield.totalHooks, 1);
     expectAvailable(result.hookYield.uniqueSurvivorsHooked, 1);
     expectAvailable(result.hookYield.secondHookConversions, 0);
+    expect(result.hookYield.secondHookConversions.sampleSize).toBe(1);
+    expect(result.hookYield.secondHookConversions.evidenceEventIds).toEqual([
+      "event-009",
+      "event-014",
+    ]);
     expectAvailable(result.hookYield.hookConcentration, 1);
     expectUnavailable(
       result.hookYield.firstEliminationTime,
@@ -310,6 +315,7 @@ describe("calculateMatchMetrics", () => {
 
     expectAvailable(result.hookYield.totalHooks, 2);
     expectAvailable(result.hookYield.secondHookConversions, 1);
+    expect(result.hookYield.secondHookConversions.sampleSize).toBe(1);
     expect(result.hookYield.secondHookConversions.evidenceEventIds).toEqual([
       "event-009",
       "event-014",
