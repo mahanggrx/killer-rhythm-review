@@ -49,6 +49,38 @@ describe("App", () => {
     expect(screen.getByText("broken.json")).toBeInTheDocument();
   });
 
+  it("支持把 JSON 文件拖入上传区域并立即分析", async () => {
+    render(<App />);
+    const source = JSON.stringify(lateFirstElimination);
+    const file = new File([source], "dragged-match.json", {
+      type: "application/json",
+    });
+    Object.defineProperty(file, "text", { value: () => Promise.resolve(source) });
+    const dropzone = screen.getByRole("button", { name: /拖动 JSON 文件到这里/ });
+    const dataTransfer = { files: [file], types: ["Files"], dropEffect: "none" };
+
+    fireEvent.dragEnter(dropzone, { dataTransfer });
+    expect(dropzone).toHaveClass("json-dropzone--active");
+    fireEvent.drop(dropzone, { dataTransfer });
+
+    expect(await screen.findByRole("heading", { name: "首次永久减员形成较晚" })).toBeInTheDocument();
+    expect(screen.getByText("dragged-match.json", { selector: ".source-status strong" })).toBeInTheDocument();
+    expect(dropzone).not.toHaveClass("json-dropzone--active");
+  });
+
+  it("拖入非 JSON 文件时给出明确错误且不读取文件", async () => {
+    render(<App />);
+    const file = new File(["not json"], "notes.txt", { type: "text/plain" });
+    const dropzone = screen.getByRole("button", { name: /拖动 JSON 文件到这里/ });
+
+    fireEvent.drop(dropzone, {
+      dataTransfer: { files: [file], types: ["Files"], dropEffect: "none" },
+    });
+
+    expect(await screen.findByText(/只支持 \.json 格式/)).toBeInTheDocument();
+    expect(screen.getByText("样例 01 · 首追过长", { selector: ".source-status strong" })).toBeInTheDocument();
+  });
+
   it("点击时间线节点展示事件详情", async () => {
     render(<App />);
     const chaseButtons = screen.getAllByRole("button", { name: /追逐开始/ });
@@ -97,7 +129,7 @@ describe("App", () => {
       target: { files: [file] },
     });
 
-    expect(await screen.findByRole("heading", { name: "暂时无法读取这份日志" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "暂时无法导入这份日志" })).toBeInTheDocument();
     expect(screen.getByText(/unreadable.json/)).toBeInTheDocument();
   });
 
