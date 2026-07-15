@@ -2,7 +2,6 @@ import { parseMatchLogJson } from "../log";
 import { calculateMatchMetrics, type MetricConfig } from "../metrics";
 import {
   evaluateBreakpointRules,
-  type PlayerExperience,
   type RuleEngineConfig,
 } from "../rules";
 import { buildEventTimeline } from "../timeline";
@@ -12,7 +11,6 @@ import type { AnalysisResult } from "./types";
 export interface AnalyzeMatchOptions {
   metricConfig: Readonly<MetricConfig>;
   ruleConfig: Readonly<RuleEngineConfig>;
-  playerExperience: PlayerExperience;
 }
 
 export function analyzeMatchJson(
@@ -30,11 +28,7 @@ export function analyzeMatchJson(
   }
 
   const metrics = calculateMatchMetrics(validation.data, options.metricConfig);
-  const rules = evaluateBreakpointRules(
-    metrics,
-    { playerExperience: options.playerExperience },
-    options.ruleConfig,
-  );
+  const rules = evaluateBreakpointRules(metrics, options.ruleConfig);
   const presentation = buildAnalysisPresentation(
     metrics,
     rules,

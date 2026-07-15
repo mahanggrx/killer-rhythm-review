@@ -1,6 +1,6 @@
 import firstChaseTooLong from "./samples/first-chase-too-long.json";
-import highProgressGeneratorsLost from "./samples/high-progress-generators-lost.json";
-import hookPressureDiffuse from "./samples/hook-pressure-diffuse.json";
+import lateFirstElimination from "./samples/late-first-elimination.json";
+import engagementGapTooLong from "./samples/engagement-gap-too-long.json";
 
 export interface PresetMatch {
   id: string;
@@ -9,8 +9,8 @@ export interface PresetMatch {
   source: string;
   expectedPrimaryRuleId:
     | "FIRST_CHASE_TOO_LONG"
-    | "GENERATOR_CONTROL_WEAK"
-    | "HOOK_PRESSURE_DIFFUSE";
+    | "LATE_FIRST_ELIMINATION"
+    | "ENGAGEMENT_GAP_TOO_LONG";
 }
 
 function toSource(value: unknown): string {
@@ -21,23 +21,23 @@ export const PRESET_MATCHES: readonly PresetMatch[] = [
   {
     id: "first-chase-too-long",
     label: "样例 01 · 首追过长",
-    description: "首次追逐开始后 88 秒才形成首挂，其他规则不越过默认阈值。",
+    description: "首次正式追逐从生效到结束持续 78 秒，不依赖倒地后的挂钩结果。",
     source: toSource(firstChaseTooLong),
     expectedPrimaryRuleId: "FIRST_CHASE_TOO_LONG",
   },
   {
-    id: "high-progress-generators-lost",
-    label: "样例 02 · 高进度发电机丢失",
-    description: "两台进入高进度区间的发电机在再次有效干扰前完成。",
-    source: toSource(highProgressGeneratorsLost),
-    expectedPrimaryRuleId: "GENERATOR_CONTROL_WEAK",
+    id: "late-first-elimination",
+    label: "样例 02 · 首次减员较晚",
+    description: "首次永久减员形成前已有四台发电机完成，剩余一个基础修理目标。",
+    source: toSource(lateFirstElimination),
+    expectedPrimaryRuleId: "LATE_FIRST_ELIMINATION",
   },
   {
-    id: "hook-pressure-diffuse",
-    label: "样例 03 · 挂数分散",
-    description: "四次首挂分布在四名逃生者身上，未形成再次上钩或永久减员。",
-    source: toSource(hookPressureDiffuse),
-    expectedPrimaryRuleId: "HOOK_PRESSURE_DIFFUSE",
+    id: "engagement-gap-too-long",
+    label: "样例 03 · 接敌空窗较长",
+    description: "开局与后续两次完整追逐之间均存在 50 秒空窗，平均追逐空窗为 50 秒。",
+    source: toSource(engagementGapTooLong),
+    expectedPrimaryRuleId: "ENGAGEMENT_GAP_TOO_LONG",
   },
 ] as const;
 

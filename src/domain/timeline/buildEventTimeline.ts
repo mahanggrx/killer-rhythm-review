@@ -19,23 +19,6 @@ const chaseEndReasonCopy: Record<string, string> = {
   unknown: "原因未知",
 };
 
-const evidenceTypeCopy: Record<string, string> = {
-  direct_los: "直接视野",
-  aura: "气场",
-  scream: "尖叫",
-  killer_instinct: "杀手本能",
-  scratch_marks: "足迹",
-  blood: "血迹",
-  sound: "声音",
-  manual: "人工记录",
-};
-
-const confidenceCopy: Record<string, string> = {
-  confirmed: "确认",
-  probable: "较可信",
-  uncertain: "不确定",
-};
-
 const outcomeCopy: Record<string, string> = {
   sacrificed: "献祭",
   killed: "处决",
@@ -64,19 +47,6 @@ function toTimelineCopy(event: MatchEvent): TimelineCopy | null {
         details: [{ label: "记录类型", value: "对局开始" }],
         defaultVisible: false,
       };
-    case "target_acquired":
-      return {
-        kind: "acquired",
-        label: "确认目标",
-        summary: `${event.survivorId} · ${evidenceTypeCopy[event.evidenceType]}`,
-        details: [
-          { label: "逃生者", value: event.survivorId },
-          { label: "证据类型", value: evidenceTypeCopy[event.evidenceType] },
-          { label: "置信度", value: confidenceCopy[event.confidence] },
-          { label: "观察备注", value: event.observerNote },
-        ],
-        defaultVisible: true,
-      };
     case "chase_start":
       return {
         kind: "chase",
@@ -85,7 +55,7 @@ function toTimelineCopy(event: MatchEvent): TimelineCopy | null {
         details: [
           { label: "逃生者", value: event.survivorId },
           { label: "追逐 ID", value: event.chaseId },
-          { label: "记录来源", value: event.source === "game_state" ? "游戏状态" : "人工记录" },
+          { label: "记录来源", value: "游戏正式追逐状态" },
         ],
         defaultVisible: true,
       };

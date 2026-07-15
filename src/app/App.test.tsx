@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
+import lateFirstElimination from "../data/samples/late-first-elimination.json";
 import validSample from "../data/samples/valid-base-match.json";
 import { App } from "./App";
 
@@ -7,32 +8,33 @@ describe("App", () => {
   it("默认展示首追过长样例及其真实分析结果", () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: /把一局的失速时刻/ })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "首次挂钩形成较晚" })).toBeInTheDocument();
-    expect(screen.getByText("88 秒", { selector: ".metric-card__value" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "杀手节奏复盘反馈系统" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次追逐持续较长" })).toBeInTheDocument();
+    expect(screen.getByText("78 秒", { selector: ".metric-card__value" })).toBeInTheDocument();
     expect(screen.getByText("原型待验证数值")).toBeInTheDocument();
+    expect(screen.queryByLabelText("分析阶段")).not.toBeInTheDocument();
   });
 
   it("选择样例后重新校验、计算并更新主要反馈", () => {
     render(<App />);
 
     fireEvent.change(screen.getByLabelText("选择合成样例"), {
-      target: { value: "high-progress-generators-lost" },
+      target: { value: "late-first-elimination" },
     });
 
-    expect(screen.getByRole("heading", { name: "高进度发电机回防不足" })).toBeInTheDocument();
-    expect(screen.getByText("2", { selector: ".metric-card__value" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次永久减员形成较晚" })).toBeInTheDocument();
+    expect(screen.getByText("1", { selector: ".metric-card__value" })).toBeInTheDocument();
   });
 
   it("修改阈值后立即使用统一分析入口更新为无明确断点，并可恢复默认", () => {
     render(<App />);
-    const threshold = screen.getByLabelText("首次挂钩阈值");
+    const threshold = screen.getByLabelText("首次追逐时长阈值");
 
     fireEvent.change(threshold, { target: { value: "100" } });
     expect(screen.getByRole("heading", { name: "未发现明确主要断点" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /恢复默认值/ }));
-    expect(screen.getByRole("heading", { name: "首次挂钩形成较晚" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次追逐持续较长" })).toBeInTheDocument();
   });
 
   it("上传非法 JSON 时安全显示解析错误", async () => {
@@ -53,7 +55,7 @@ describe("App", () => {
 
     fireEvent.click(chaseButtons[0]);
 
-    await waitFor(() => expect(screen.getByText("fc-003")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("fc-002")).toBeInTheDocument());
     expect(screen.getByText("追逐 ID")).toBeInTheDocument();
   });
 
@@ -82,10 +84,10 @@ describe("App", () => {
 
   it("文件读取失败和无效阈值不会让页面崩溃或污染分析配置", async () => {
     render(<App />);
-    const threshold = screen.getByLabelText("首次挂钩阈值");
+    const threshold = screen.getByLabelText("首次追逐时长阈值");
     fireEvent.change(threshold, { target: { value: "-1" } });
     expect(threshold).toHaveValue(75);
-    expect(screen.getByRole("heading", { name: "首次挂钩形成较晚" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次追逐持续较长" })).toBeInTheDocument();
 
     const file = new File([""], "unreadable.json", { type: "application/json" });
     Object.defineProperty(file, "text", {
@@ -97,5 +99,46 @@ describe("App", () => {
 
     expect(await screen.findByRole("heading", { name: "暂时无法读取这份日志" })).toBeInTheDocument();
     expect(screen.getByText(/unreadable.json/)).toBeInTheDocument();
+  });
+
+  it("覆盖上传日志、校验分析和修改减员阈值的主流程", async () => {
+    render(<App />);
+    const source = JSON.stringify(lateFirstElimination);
+    const file = new File([source], "late-elimination.json", {
+      type: "application/json",
+    });
+    Object.defineProperty(file, "text", { value: () => Promise.resolve(source) });
+
+    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), {
+      target: { files: [file] },
+    });
+
+    expect(await screen.findByRole("heading", { name: "首次永久减员形成较晚" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("首次减员剩余发电机阈值"), {
+      target: { value: "0" },
+    });
+    expect(screen.getByRole("heading", { name: "未发现明确主要断点" })).toBeInTheDocument();
+  });
+
+  it("按指标生成日志、通过回算并立即进入现有分析流程", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /按指标生成日志/ }));
+    fireEvent.change(screen.getByLabelText("平均追逐空窗（秒）"), {
+      target: { value: "50" },
+    });
+    fireEvent.change(screen.getByLabelText("首次追逐持续时间（秒）"), {
+      target: { value: "20" },
+    });
+    fireEvent.change(screen.getByLabelText("首次减员时剩余发电机"), {
+      target: { value: "3" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /生成并分析/ }));
+
+    expect(screen.getByText("已通过日志校验与指标回算")).toBeInTheDocument();
+    expect(screen.getByText("自定义合成日志", { selector: ".source-status strong" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "有效接敌空窗较长" })).toBeInTheDocument();
+    expect((screen.getByLabelText("生成的 JSON") as HTMLTextAreaElement).value)
+      .toContain('"matchId": "synthetic-50-20-3"');
   });
 });

@@ -8,29 +8,27 @@
 
 - 时间指标统一使用毫秒。
 - 每项指标返回 `available` 或 `unavailable`，并保留解释和 `evidenceEventIds`。
-- 没有事件可以构成真实的零计数；缺少计算证据、零分母或样本不足则返回不可用，不伪装为零。
+- 缺少计算证据、零分母或样本不足时返回不可用，不伪装为零。
 - 事件按 `timestampMs`、`eventOrder` 和原始位置稳定排序。
-- 重复 `eventId` 正式流程仍由输入校验阻止；指标层兜底只保留规范化后的第一条，并输出诊断。
+- 重复 `eventId` 正式流程由输入校验阻止；指标层兜底只保留规范化后的第一条，并输出诊断。
 - 指标函数不修改日志或配置对象。
 
-## 找人
+## 接敌节奏
 
-`target_acquired.confidence` 会进入找人指标的置信度元数据，并用于规则候选排序。原型映射为 `confirmed = 1`、`probable = 0.75`、`uncertain = 0.5`；这些权重同样属于待验证假设。
+第一版不使用人工 `target_acquired`。系统只使用游戏正式追逐状态作为“有效接敌”的代理，因此不能声称知道玩家何时主观发现了逃生者。
 
 | 指标 | 当前口径 |
 | --- | --- |
-| `firstFindTime` | `trial_start` 到首次人工标注 `target_acquired`。后者不是游戏正式“发现”事件。 |
-| `averageSearchGap` | 所有活动追逐都结束后，到下一次 `target_acquired` 的平均空窗。若仍有并发追逐，尚不开始计时；删失追逐不形成样本。 |
-| `averagePostHookTargetAcquisition` | 有效普通挂钩完成后，到下一次 `target_acquired` 的平均时间。若在目标确认前已经开始新追逐或再次挂钩，则该样本不可用。 |
+| `averageChaseGap` | `trial_start` 到首次游戏正式 `chase_start`，加上每次所有活动追逐结束后到下一次 `chase_start` 的完整空窗，再除以有效空窗数量。若仍有并发追逐则不开始新空窗；删失结束和对局结束后的尾段不形成样本。只有开局到首次追逐一个样本时也可以计算。 |
 
 ## 追击
 
 | 指标 | 当前口径 |
 | --- | --- |
+| `firstChaseDuration` | 首个 `chase_start` 到同一 `chaseId` 的非删失 `chase_end`。不以倒地、抱起或挂钩代替结束；结束原因单独保留。 |
 | `firstChaseToFirstDown` | 首次 `chase_start` 到同一 `chaseId`、同一逃生者在该追逐内首次由杀手归因的 `survivor_downed`，不包含搬运。 |
-| `firstChaseToFirstHook` | 首次 `chase_start` 到同一首追目标的首次有效普通挂钩，包含追逐、抱起、搬运和挂钩，不包含开局找人。 |
 | `averageChaseDuration` | 按独立 `chaseId` 配对的非删失完整追逐平均时长；未结束或 `censored` 区间不计入。 |
-| `abandonedChaseCount` | 结束原因为 `lost_los`、`range_break`、`locker` 或 `target_switch` 的完整追逐数。名称沿用原型字段，但结果不声称知道玩家是否主观放弃。 |
+| `abandonedChaseCount` | 结束原因为 `lost_los`、`range_break`、`locker` 或 `target_switch` 的完整追逐数。该指标不声称知道玩家是否主观放弃。 |
 
 ## 发电机控制
 
@@ -39,22 +37,23 @@
 | 指标 | 当前口径 |
 | --- | --- |
 | `keyGeneratorInterruptions` | 干扰前处于高进度，且实际生效的杀手即时损失、回退开始或封锁。一次因果触发的多个效果按 `interferenceId` 去重；逃生者自行停修不计。 |
-| `highProgressGeneratorLosses` | 进入高进度 episode 后，在下一次有效杀手干扰前完成的不同发电机数量。完成事件本身不能作为此前已进入高进度的唯一证据。 |
+| `highProgressGeneratorLosses` | 进入高进度 episode 后，在下一次有效杀手干扰前完成的不同发电机数量。完成事件本身不能作为此前已进入高进度的唯一阶段证据。 |
 
-## 挂钩收益与减员
+若日志只有 `generator_completed`，没有完成前的阶段进度或干扰记录，这两项指标返回不可用。这表示无法重建高进度 episode，不代表损失或干扰为零。
+
+## 永久减员结果
 
 | 指标 | 当前口径 |
 | --- | --- |
-| `totalHooks` | 有效普通 `hook_completed` 总数；同一次悬挂自然进入下一阶段不增加计数。 |
-| `uniqueSurvivorsHooked` | 至少发生过一次有效普通挂钩的不同逃生者数量。 |
-| `secondHookConversions` | 首次有效普通挂钩后成功离钩，并在其后再次有效上钩的逃生者数量；`sampleSize` 是形成过再次上钩机会的逃生者数，供规则判断最低样本。 |
-| `firstEliminationTime` | 从 `trial_start` 到首次永久减员；献祭、处决或流血死亡均可计入，BOT 接管和逃脱不计。 |
-| `firstHookChainEliminationTime` | 从 `trial_start` 到首次明确标记 `standard_hook_chain` 且有此前普通挂钩证据支持的献祭结果；与处决和流血死亡分开。 |
-| `hookConcentration` | 最高单个逃生者的有效普通挂钩数除以总有效普通挂钩数；无挂钩时因零分母而不可用。 |
+| `firstEliminationGeneratorsRemaining` | 首次献祭、处决或流血死亡发生前，基础 1v4 所需的 5 个发电机修理目标中尚未完成的数量。同时间戳严格使用 `eventOrder` 判断先后。逃脱和 BOT 接管不计。 |
+| `totalEliminations` | 正常结束的完整对局中，献祭、处决和流血死亡的总数。异常结束时不可用，避免把局部日志当作最终结果。 |
+
+如果正常结束的对局没有永久减员，`firstEliminationGeneratorsRemaining` 返回 `no_elimination_event`，页面显示“本局没有形成永久减员”，而不是伪造一个发电机剩余数。
 
 ## 实现边界与尚未覆盖
 
 - 当前指标入口假定日志已先通过结构和语义校验；兜底诊断不能替代正式校验。
 - 倒地时缺失的追逐结束可按声明策略生成；对局结束时未闭合追逐和回退会生成可追溯的 `censored` 关闭事件。
+- 当前合成日志模拟游戏侧可提供正式追逐事件；网页仍不读取真实客户端或玩家账号数据。
 - 尚未计算发电机活跃回退累计时长或覆盖率。
-- 指标已通过统一分析入口接入规则引擎和 React 页面；React 只消费分析结果，不直接计算指标。
+- React 只消费统一分析结果，不直接计算指标。

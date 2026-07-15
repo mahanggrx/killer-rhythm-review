@@ -133,13 +133,13 @@ export function calculateGeneratorControlMetrics(
       highProgressGeneratorLosses: unavailableMetric(
         "count",
         "no_generator_progress_evidence",
-        "没有完成事件之前的发电机进度证据，无法重建高进度 episode。",
+        "日志没有记录发电机完成前的阶段进度，无法判断它何时进入高进度以及此后是否再次受到有效干扰；这不代表损失为 0。",
         `进入高进度 episode 后，在下一次有效杀手干扰前完成的发电机数量。${explanationSuffix}`,
       ),
       keyGeneratorInterruptions: unavailableMetric(
         "count",
         "no_generator_progress_evidence",
-        "没有发电机进度或干扰证据。",
+        "日志没有发电机阶段进度或有效干扰证据，不能判断高进度干扰次数；这不代表干扰为 0。",
         `高进度状态下发生的有效杀手干扰次数，按 interferenceId 去重。${explanationSuffix}`,
       ),
     };

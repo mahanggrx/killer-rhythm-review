@@ -67,21 +67,21 @@ export function calculateChaseMetrics(
     }
   }
 
+  let firstChaseDuration: ChaseMetrics["firstChaseDuration"];
   let firstChaseToFirstDown: ChaseMetrics["firstChaseToFirstDown"];
-  let firstChaseToFirstHook: ChaseMetrics["firstChaseToFirstHook"];
 
   if (!firstChase) {
+    firstChaseDuration = unavailableMetric(
+      "milliseconds",
+      "missing_chase_start",
+      "没有追逐开始事件。",
+      "从第一次 chase_start 到同一 chaseId 的非删失 chase_end，表示首个正式追逐区间的持续时间。",
+    );
     firstChaseToFirstDown = unavailableMetric(
       "milliseconds",
       "missing_chase_start",
       "没有追逐开始事件。",
       "从第一次 chase_start 到其后首次由杀手造成的倒地时间。",
-    );
-    firstChaseToFirstHook = unavailableMetric(
-      "milliseconds",
-      "missing_chase_start",
-      "没有追逐开始事件。",
-      "从第一次 chase_start 到其后首次有效普通挂钩的首轮转化耗时，包含搬运和挂钩。",
     );
   } else {
     const firstChaseEndIndex = events.findIndex(
@@ -113,20 +113,28 @@ export function calculateChaseMetrics(
       firstDownIndex >= 0 && events[firstDownIndex].type === "survivor_downed"
         ? events[firstDownIndex]
         : null;
-    const firstHook = firstDown
-      ? events
-          .slice(Math.max(firstDownIndex, firstChaseEndIndex) + 1)
-          .find(
-            (event) =>
-              event.type === "hook_completed" &&
-              event.isStandardHook &&
-              event.survivorId === firstChase.survivorId,
-          )
-      : null;
     const chaseEvidence = [
       firstChase.eventId,
       ...(firstChaseEnd ? [firstChaseEnd.eventId] : []),
     ];
+
+    firstChaseDuration = firstChaseEnd && !firstChaseEnd.censored
+      ? availableMetric(
+          firstChaseEnd.timestampMs - firstChase.timestampMs,
+          "milliseconds",
+          "从第一次 chase_start 到同一 chaseId 的非删失 chase_end；是否倒地、转火或丢失目标由结束原因单独说明，不以挂钩作为追逐结束。",
+          chaseEvidence,
+          1,
+        )
+      : unavailableMetric(
+          "milliseconds",
+          "missing_first_chase_end",
+          firstChaseEnd
+            ? "第一次追逐在对局结束时被删失，不能作为完整首追时长。"
+            : "第一次追逐没有对应的结束事件。",
+          "从第一次 chase_start 到同一 chaseId 的非删失 chase_end。",
+          chaseEvidence,
+        );
 
     firstChaseToFirstDown = firstDown
       ? availableMetric(
@@ -144,23 +152,6 @@ export function calculateChaseMetrics(
           chaseEvidence,
         );
 
-    firstChaseToFirstHook = firstHook
-      ? availableMetric(
-          firstHook.timestampMs - firstChase.timestampMs,
-          "milliseconds",
-          "从第一次 chase_start 到同一首追目标的首次有效普通挂钩，包含该目标倒地后的抱起、搬运和挂钩。",
-          [firstChase.eventId, ...(firstDown ? [firstDown.eventId] : []), ...(firstChaseEnd ? [firstChaseEnd.eventId] : []), firstHook.eventId],
-          1,
-        )
-      : unavailableMetric(
-          "milliseconds",
-          "missing_first_hook",
-          firstDown
-            ? "第一次追逐目标倒地后没有形成该目标的有效普通挂钩。"
-            : "第一次追逐没有形成同一目标的可验证倒地，不能继续关联挂钩。",
-          "从第一次 chase_start 到同一首追目标首次有效普通挂钩的首轮转化耗时。",
-          [...chaseEvidence, ...(firstDown ? [firstDown.eventId] : [])],
-        );
   }
 
   const averageDuration = mean(
@@ -208,8 +199,8 @@ export function calculateChaseMetrics(
         );
 
   return {
+    firstChaseDuration,
     firstChaseToFirstDown,
-    firstChaseToFirstHook,
     averageChaseDuration,
     abandonedChaseCount,
   };

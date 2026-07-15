@@ -2,31 +2,26 @@ import type { MetricUnit, NumericMetric } from "../metrics";
 
 export const RULE_IDS = [
   "FIRST_CHASE_TOO_LONG",
-  "SEARCH_GAP_TOO_LONG",
-  "GENERATOR_CONTROL_WEAK",
-  "HOOK_PRESSURE_DIFFUSE",
+  "LATE_FIRST_ELIMINATION",
+  "ENGAGEMENT_GAP_TOO_LONG",
 ] as const;
 
 export type RuleId = (typeof RULE_IDS)[number];
 export type FeedbackRuleId = RuleId | "no_clear_breakpoint";
-export type PlayerExperience = "novice" | "intermediate";
 export type BreakpointDimension =
-  | "finding"
+  | "engagement"
   | "chase"
-  | "generator_control"
-  | "hook_yield"
+  | "elimination"
   | "none";
 export type RuleSeverity = "moderate" | "high" | "critical" | "none";
 
 export type TriggeredMetricId =
-  | "chase.firstChaseToFirstHook"
-  | "finding.averageSearchGap"
-  | "generatorControl.highProgressGeneratorLosses"
-  | "hookYield.totalHooks"
-  | "hookYield.secondHookConversions"
-  | "hookYield.firstHookChainEliminationTime";
+  | "chase.firstChaseDuration"
+  | "engagement.averageChaseGap"
+  | "elimination.firstEliminationGeneratorsRemaining"
+  | "elimination.totalEliminations";
 
-export type EvidenceOperator = ">" | ">=" | "<" | "unavailable";
+export type EvidenceOperator = ">" | ">=" | "<" | "<=" | "unavailable";
 
 export interface RuleEvidence {
   metricId: TriggeredMetricId;
@@ -95,18 +90,10 @@ export interface SingleMetricRuleConfig extends SeverityConfig {
   minimumSampleSize: number;
 }
 
-export interface GeneratorRuleConfig extends SeverityConfig {
+export interface EliminationRuleConfig extends SeverityConfig {
   enabled: boolean;
-  minimumLosses: number;
+  maximumGeneratorsRemaining: number;
   minimumSampleSize: number;
-}
-
-export interface HookPressureRuleConfig extends SeverityConfig {
-  enabled: boolean;
-  minimumTotalHooks: number;
-  maximumSecondHookConversionsExclusive: number;
-  minimumConversionOpportunities: number;
-  lateEliminationThresholdMs: number;
   noEliminationRelativeDeviation: number;
 }
 
@@ -119,17 +106,12 @@ export interface RuleEngineConfig {
     highMinScore: number;
     criticalMinScore: number;
   };
-  priorityByExperience: Record<PlayerExperience, RuleId[]>;
+  priority: RuleId[];
   rules: {
     FIRST_CHASE_TOO_LONG: SingleMetricRuleConfig;
-    SEARCH_GAP_TOO_LONG: SingleMetricRuleConfig;
-    GENERATOR_CONTROL_WEAK: GeneratorRuleConfig;
-    HOOK_PRESSURE_DIFFUSE: HookPressureRuleConfig;
+    LATE_FIRST_ELIMINATION: EliminationRuleConfig;
+    ENGAGEMENT_GAP_TOO_LONG: SingleMetricRuleConfig;
   };
-}
-
-export interface RuleEvaluationContext {
-  playerExperience: PlayerExperience;
 }
 
 export interface RuleConfigValidationResult {

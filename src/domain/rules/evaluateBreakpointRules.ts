@@ -11,7 +11,6 @@ import type {
   RuleEngineConfig,
   RuleEngineDiagnostic,
   RuleEngineResult,
-  RuleEvaluationContext,
   RuleEvidence,
   RuleFeedback,
   RuleId,
@@ -29,16 +28,14 @@ interface RankedCandidate {
 }
 
 function isAvailable(metric: NumericMetric): metric is AvailableMetric {
-  return (
-    metric.status === "available" &&
-    Number.isFinite(metric.value) &&
-    metric.value >= 0 &&
-    Number.isInteger(metric.sampleSize) &&
-    metric.sampleSize >= 0 &&
-    Number.isFinite(metric.confidence) &&
-    metric.confidence >= 0 &&
-    metric.confidence <= 1
-  );
+  return metric.status === "available"
+    && Number.isFinite(metric.value)
+    && metric.value >= 0
+    && Number.isInteger(metric.sampleSize)
+    && metric.sampleSize >= 0
+    && Number.isFinite(metric.confidence)
+    && metric.confidence >= 0
+    && metric.confidence <= 1;
 }
 
 function evidenceSufficiency(sampleSize: number, minimumSampleSize: number): number {
@@ -63,14 +60,8 @@ function severityFromScore(
   score: number,
   config: RuleEngineConfig,
 ): Exclude<RuleSeverity, "none"> {
-  if (score >= config.severityBands.criticalMinScore) {
-    return "critical";
-  }
-
-  if (score >= config.severityBands.highMinScore) {
-    return "high";
-  }
-
+  if (score >= config.severityBands.criticalMinScore) return "critical";
+  if (score >= config.severityBands.highMinScore) return "high";
   return "moderate";
 }
 
@@ -98,37 +89,33 @@ function createCandidate(
   ruleId: RuleId,
   evidence: RuleEvidence[],
   relativeDeviation: number,
-  evidenceSufficiency: number,
+  evidenceSufficiencyScore: number,
   baseSeverity: number,
   deviationWeight: number,
   confidence: number,
-  context: RuleEvaluationContext,
   config: RuleEngineConfig,
+  copyOverride?: Partial<Pick<RuleFeedback, "title" | "message" | "practiceGoal">>,
 ): RankedCandidate {
   const limitedEvidence = evidence.slice(0, config.maxDisplayedMetrics);
   const copy = RULE_COPY[ruleId];
   const severityScore = baseSeverity + relativeDeviation * deviationWeight;
-  const priority = config.priorityByExperience[
-    context.playerExperience
-  ].indexOf(ruleId);
+  const priority = config.priority.indexOf(ruleId);
 
   return {
     feedback: {
       ruleId,
-      title: copy.title,
+      title: copyOverride?.title ?? copy.title,
       dimension: copy.dimension,
       severity: severityFromScore(severityScore, config),
       evidence: limitedEvidence,
       evidenceEventIds: [
-        ...new Set(
-          limitedEvidence.flatMap((item) => item.evidenceEventIds),
-        ),
+        ...new Set(limitedEvidence.flatMap((item) => item.evidenceEventIds)),
       ],
-      message: copy.message,
-      practiceGoal: copy.practiceGoal,
+      message: copyOverride?.message ?? copy.message,
+      practiceGoal: copyOverride?.practiceGoal ?? copy.practiceGoal,
       triggeredMetricIds: limitedEvidence.map((item) => item.metricId),
     },
-    evidenceSufficiency,
+    evidenceSufficiency: evidenceSufficiencyScore,
     severityScore,
     relativeDeviation,
     confidence,
@@ -143,10 +130,9 @@ function addUnavailableDiagnostic(
   metric: NumericMetric,
   minimumSampleSize?: number,
 ): void {
-  const message =
-    metric.status === "unavailable"
-      ? `${metricId} 不可用：${metric.reason.message}`
-      : `${metricId} 样本量 ${metric.sampleSize} 低于规则最低要求 ${minimumSampleSize ?? 0}。`;
+  const message = metric.status === "unavailable"
+    ? `${metricId} 不可用：${metric.reason.message}`
+    : `${metricId} 样本量 ${metric.sampleSize} 低于规则最低要求 ${minimumSampleSize ?? 0}。`;
 
   diagnostics.push({
     severity: "warning",
@@ -159,18 +145,14 @@ function addUnavailableDiagnostic(
 
 function evaluateFirstChaseRule(
   metrics: MatchMetrics,
-  context: RuleEvaluationContext,
   config: RuleEngineConfig,
   diagnostics: RuleEngineDiagnostic[],
 ): RankedCandidate | null {
   const rule = config.rules.FIRST_CHASE_TOO_LONG;
+  if (!rule.enabled) return null;
 
-  if (!rule.enabled) {
-    return null;
-  }
-
-  const metric = metrics.chase.firstChaseToFirstHook;
-  const metricId = "chase.firstChaseToFirstHook" as const;
+  const metric = metrics.chase.firstChaseDuration;
+  const metricId = "chase.firstChaseDuration" as const;
 
   if (!isAvailable(metric) || metric.sampleSize < rule.minimumSampleSize) {
     addUnavailableDiagnostic(
@@ -183,13 +165,9 @@ function evaluateFirstChaseRule(
     return null;
   }
 
-  if (metric.value <= rule.thresholdMs) {
-    return null;
-  }
+  if (metric.value <= rule.thresholdMs) return null;
 
-  const relativeDeviation =
-    (metric.value - rule.thresholdMs) / rule.thresholdMs;
-
+  const relativeDeviation = (metric.value - rule.thresholdMs) / rule.thresholdMs;
   return createCandidate(
     "FIRST_CHASE_TOO_LONG",
     [buildEvidence(metricId, metric, ">", rule.thresholdMs)],
@@ -198,30 +176,25 @@ function evaluateFirstChaseRule(
     rule.baseSeverity,
     rule.deviationWeight,
     rule.confidence * metric.confidence,
-    context,
     config,
   );
 }
 
-function evaluateSearchGapRule(
+function evaluateEngagementGapRule(
   metrics: MatchMetrics,
-  context: RuleEvaluationContext,
   config: RuleEngineConfig,
   diagnostics: RuleEngineDiagnostic[],
 ): RankedCandidate | null {
-  const rule = config.rules.SEARCH_GAP_TOO_LONG;
+  const rule = config.rules.ENGAGEMENT_GAP_TOO_LONG;
+  if (!rule.enabled) return null;
 
-  if (!rule.enabled) {
-    return null;
-  }
-
-  const metric = metrics.finding.averageSearchGap;
-  const metricId = "finding.averageSearchGap" as const;
+  const metric = metrics.engagement.averageChaseGap;
+  const metricId = "engagement.averageChaseGap" as const;
 
   if (!isAvailable(metric) || metric.sampleSize < rule.minimumSampleSize) {
     addUnavailableDiagnostic(
       diagnostics,
-      "SEARCH_GAP_TOO_LONG",
+      "ENGAGEMENT_GAP_TOO_LONG",
       metricId,
       metric,
       rule.minimumSampleSize,
@@ -229,215 +202,121 @@ function evaluateSearchGapRule(
     return null;
   }
 
-  if (metric.value <= rule.thresholdMs) {
-    return null;
-  }
+  if (metric.value <= rule.thresholdMs) return null;
 
-  const relativeDeviation =
-    (metric.value - rule.thresholdMs) / rule.thresholdMs;
+  const relativeDeviation = (metric.value - rule.thresholdMs) / rule.thresholdMs;
 
   return createCandidate(
-    "SEARCH_GAP_TOO_LONG",
+    "ENGAGEMENT_GAP_TOO_LONG",
     [buildEvidence(metricId, metric, ">", rule.thresholdMs)],
     relativeDeviation,
     evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
     rule.baseSeverity,
     rule.deviationWeight,
     rule.confidence * metric.confidence,
-    context,
     config,
   );
 }
 
-function evaluateGeneratorRule(
+function evaluateLateEliminationRule(
   metrics: MatchMetrics,
-  context: RuleEvaluationContext,
   config: RuleEngineConfig,
   diagnostics: RuleEngineDiagnostic[],
 ): RankedCandidate | null {
-  const rule = config.rules.GENERATOR_CONTROL_WEAK;
+  const rule = config.rules.LATE_FIRST_ELIMINATION;
+  if (!rule.enabled) return null;
 
-  if (!rule.enabled) {
-    return null;
+  const firstElimination = metrics.elimination.firstEliminationGeneratorsRemaining;
+  const totalEliminations = metrics.elimination.totalEliminations;
+  const firstId = "elimination.firstEliminationGeneratorsRemaining" as const;
+  const totalId = "elimination.totalEliminations" as const;
+
+  if (isAvailable(firstElimination)) {
+    if (
+      firstElimination.sampleSize < rule.minimumSampleSize
+      || firstElimination.value > rule.maximumGeneratorsRemaining
+    ) {
+      if (firstElimination.sampleSize < rule.minimumSampleSize) {
+        addUnavailableDiagnostic(
+          diagnostics,
+          "LATE_FIRST_ELIMINATION",
+          firstId,
+          firstElimination,
+          rule.minimumSampleSize,
+        );
+      }
+      return null;
+    }
+
+    const relativeDeviation = (
+      rule.maximumGeneratorsRemaining - firstElimination.value + 1
+    ) / (rule.maximumGeneratorsRemaining + 1);
+
+    return createCandidate(
+      "LATE_FIRST_ELIMINATION",
+      [buildEvidence(
+        firstId,
+        firstElimination,
+        "<=",
+        rule.maximumGeneratorsRemaining,
+      )],
+      relativeDeviation,
+      evidenceSufficiency(firstElimination.sampleSize, rule.minimumSampleSize),
+      rule.baseSeverity,
+      rule.deviationWeight,
+      rule.confidence * firstElimination.confidence,
+      config,
+      {
+        message: `本局数据显示，首次永久减员形成时，基础修理目标只剩 ${firstElimination.value} 台。`,
+      },
+    );
   }
 
-  const metric = metrics.generatorControl.highProgressGeneratorLosses;
-  const metricId =
-    "generatorControl.highProgressGeneratorLosses" as const;
+  const completedWithoutElimination = firstElimination.reason.code === "no_elimination_event"
+    && isAvailable(totalEliminations)
+    && totalEliminations.value === 0;
 
-  if (!isAvailable(metric) || metric.sampleSize < rule.minimumSampleSize) {
+  if (!completedWithoutElimination) {
     addUnavailableDiagnostic(
       diagnostics,
-      "GENERATOR_CONTROL_WEAK",
-      metricId,
-      metric,
+      "LATE_FIRST_ELIMINATION",
+      firstId,
+      firstElimination,
       rule.minimumSampleSize,
     );
     return null;
   }
 
-  if (metric.value < rule.minimumLosses) {
-    return null;
-  }
-
-  const relativeDeviation =
-    (metric.value - rule.minimumLosses) / rule.minimumLosses;
-
   return createCandidate(
-    "GENERATOR_CONTROL_WEAK",
-    [buildEvidence(metricId, metric, ">=", rule.minimumLosses)],
-    relativeDeviation,
-    evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
+    "LATE_FIRST_ELIMINATION",
+    [buildEvidence(totalId, totalEliminations, "<", 1)],
+    rule.noEliminationRelativeDeviation,
+    evidenceSufficiency(totalEliminations.sampleSize, rule.minimumSampleSize),
     rule.baseSeverity,
     rule.deviationWeight,
-    rule.confidence * metric.confidence,
-    context,
+    rule.confidence * totalEliminations.confidence,
     config,
+    {
+      title: "本局未形成永久减员",
+      message: "本局日志正常结束，但没有记录到献祭、处决或流血死亡。该结论不把逃脱或 BOT 接管计为杀手减员。",
+    },
   );
 }
 
-function evaluateHookPressureRule(
-  metrics: MatchMetrics,
-  context: RuleEvaluationContext,
-  config: RuleEngineConfig,
-  diagnostics: RuleEngineDiagnostic[],
-): RankedCandidate | null {
-  const rule = config.rules.HOOK_PRESSURE_DIFFUSE;
-
-  if (!rule.enabled) {
-    return null;
-  }
-
-  const totalHooks = metrics.hookYield.totalHooks;
-  const conversions = metrics.hookYield.secondHookConversions;
-  const elimination = metrics.hookYield.firstHookChainEliminationTime;
-  const totalHooksId = "hookYield.totalHooks" as const;
-  const conversionsId = "hookYield.secondHookConversions" as const;
-  const eliminationId = "hookYield.firstHookChainEliminationTime" as const;
-
-  if (!isAvailable(totalHooks)) {
-    addUnavailableDiagnostic(
-      diagnostics,
-      "HOOK_PRESSURE_DIFFUSE",
-      totalHooksId,
-      totalHooks,
-    );
-    return null;
-  }
-
-  if (totalHooks.value < rule.minimumTotalHooks) {
-    return null;
-  }
-
-  if (
-    !isAvailable(conversions) ||
-    conversions.sampleSize < rule.minimumConversionOpportunities
-  ) {
-    addUnavailableDiagnostic(
-      diagnostics,
-      "HOOK_PRESSURE_DIFFUSE",
-      conversionsId,
-      conversions,
-      rule.minimumConversionOpportunities,
-    );
-    return null;
-  }
-
-  if (conversions.value >= rule.maximumSecondHookConversionsExclusive) {
-    return null;
-  }
-
-  const noElimination =
-    elimination.status === "unavailable" &&
-    elimination.reason.code === "no_hook_chain_elimination";
-  const lateElimination =
-    isAvailable(elimination) &&
-    elimination.value > rule.lateEliminationThresholdMs;
-
-  if (!noElimination && !lateElimination) {
-    if (!isAvailable(elimination)) {
-      addUnavailableDiagnostic(
-        diagnostics,
-        "HOOK_PRESSURE_DIFFUSE",
-        eliminationId,
-        elimination,
-      );
-    }
-    return null;
-  }
-
-  const conversionDeviation =
-    (rule.maximumSecondHookConversionsExclusive - conversions.value) /
-    rule.maximumSecondHookConversionsExclusive;
-  const eliminationDeviation = noElimination
-    ? rule.noEliminationRelativeDeviation
-    : isAvailable(elimination)
-      ? (elimination.value - rule.lateEliminationThresholdMs) /
-        rule.lateEliminationThresholdMs
-      : 0;
-  const relativeDeviation = Math.max(
-    conversionDeviation,
-    eliminationDeviation,
-  );
-  const evidence: RuleEvidence[] = [
-    buildEvidence(totalHooksId, totalHooks, ">=", rule.minimumTotalHooks),
-    buildEvidence(
-      conversionsId,
-      conversions,
-      "<",
-      rule.maximumSecondHookConversionsExclusive,
-    ),
-    buildEvidence(
-      eliminationId,
-      elimination,
-      noElimination ? "unavailable" : ">",
-      noElimination ? null : rule.lateEliminationThresholdMs,
-    ),
-  ];
-
-  return createCandidate(
-    "HOOK_PRESSURE_DIFFUSE",
-    evidence,
-    relativeDeviation,
-    Math.min(
-      evidenceSufficiency(totalHooks.sampleSize, rule.minimumTotalHooks),
-      evidenceSufficiency(
-        conversions.sampleSize,
-        rule.minimumConversionOpportunities,
-      ),
-    ),
-    rule.baseSeverity,
-    rule.deviationWeight,
-    rule.confidence * Math.min(
-      totalHooks.confidence,
-      conversions.confidence,
-      isAvailable(elimination) ? elimination.confidence : 1,
-    ),
-    context,
-    config,
-  );
-}
-
-function compareCandidates(
-  left: RankedCandidate,
-  right: RankedCandidate,
-): number {
-  return (
-    right.evidenceSufficiency - left.evidenceSufficiency ||
-    right.relativeDeviation - left.relativeDeviation ||
-    right.confidence - left.confidence ||
-    left.priority - right.priority ||
-    (left.feedback.ruleId < right.feedback.ruleId
+function compareCandidates(left: RankedCandidate, right: RankedCandidate): number {
+  return right.evidenceSufficiency - left.evidenceSufficiency
+    || right.relativeDeviation - left.relativeDeviation
+    || right.confidence - left.confidence
+    || left.priority - right.priority
+    || (left.feedback.ruleId < right.feedback.ruleId
       ? -1
       : left.feedback.ruleId > right.feedback.ruleId
         ? 1
-        : 0)
-  );
+        : 0);
 }
 
 export function evaluateBreakpointRules(
   metrics: MatchMetrics,
-  context: RuleEvaluationContext,
   configInput: unknown = DEFAULT_RULE_ENGINE_CONFIG,
 ): RuleEngineResult {
   const validation = validateRuleEngineConfig(configInput);
@@ -460,10 +339,9 @@ export function evaluateBreakpointRules(
   const config = validation.data;
   const diagnostics: RuleEngineDiagnostic[] = [];
   const candidates = [
-    evaluateFirstChaseRule(metrics, context, config, diagnostics),
-    evaluateSearchGapRule(metrics, context, config, diagnostics),
-    evaluateGeneratorRule(metrics, context, config, diagnostics),
-    evaluateHookPressureRule(metrics, context, config, diagnostics),
+    evaluateFirstChaseRule(metrics, config, diagnostics),
+    evaluateEngagementGapRule(metrics, config, diagnostics),
+    evaluateLateEliminationRule(metrics, config, diagnostics),
   ].filter((candidate): candidate is RankedCandidate => candidate !== null);
 
   candidates.sort(compareCandidates);

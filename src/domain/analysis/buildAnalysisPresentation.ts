@@ -10,17 +10,16 @@ import type {
 } from "./types";
 
 const groupCopy: Record<MetricGroupId, string> = {
-  finding: "找人效率",
+  engagement: "接敌节奏",
   chase: "追击效率",
   generatorControl: "发电机控制",
-  hookYield: "挂钩收益",
+  elimination: "减员结果",
 };
 
 const dimensionCopy: Record<string, string> = {
-  finding: "找人",
+  engagement: "接敌",
   chase: "追击",
-  generator_control: "发电机控制",
-  hook_yield: "挂钩收益",
+  elimination: "减员结果",
   none: "证据不足",
 };
 
@@ -88,27 +87,20 @@ function createMetricDefinitions(
   ruleConfig: Readonly<RuleEngineConfig>,
 ): MetricDefinition[] {
   const firstChaseThreshold = ruleConfig.rules.FIRST_CHASE_TOO_LONG.thresholdMs;
-  const searchGapThreshold = ruleConfig.rules.SEARCH_GAP_TOO_LONG.thresholdMs;
-  const generatorLossThreshold = ruleConfig.rules.GENERATOR_CONTROL_WEAK.minimumLosses;
-  const hookRule = ruleConfig.rules.HOOK_PRESSURE_DIFFUSE;
+  const engagementRule = ruleConfig.rules.ENGAGEMENT_GAP_TOO_LONG;
+  const eliminationRule = ruleConfig.rules.LATE_FIRST_ELIMINATION;
   const highProgressLabel = percent(metricConfig.highProgressThreshold);
 
   return [
-    { id: "finding.firstFindTime", group: "finding", label: "首次确认目标", metric: metrics.finding.firstFindTime, referenceText: "未设置诊断阈值" },
-    { id: "finding.averageSearchGap", group: "finding", label: "平均再搜寻空窗", metric: metrics.finding.averageSearchGap, referenceText: `参考：> ${seconds(searchGapThreshold)}` },
-    { id: "finding.averagePostHookTargetAcquisition", group: "finding", label: "挂钩后平均接敌", metric: metrics.finding.averagePostHookTargetAcquisition, referenceText: "未设置诊断阈值" },
+    { id: "engagement.averageChaseGap", group: "engagement", label: "平均追逐空窗", metric: metrics.engagement.averageChaseGap, referenceText: `参考：> ${seconds(engagementRule.thresholdMs)}` },
+    { id: "chase.firstChaseDuration", group: "chase", label: "首次追逐时长", metric: metrics.chase.firstChaseDuration, referenceText: `参考：> ${seconds(firstChaseThreshold)}` },
     { id: "chase.firstChaseToFirstDown", group: "chase", label: "首追至首次倒地", metric: metrics.chase.firstChaseToFirstDown, referenceText: "未设置诊断阈值" },
-    { id: "chase.firstChaseToFirstHook", group: "chase", label: "首追至首次挂钩", metric: metrics.chase.firstChaseToFirstHook, referenceText: `参考：> ${seconds(firstChaseThreshold)}` },
     { id: "chase.averageChaseDuration", group: "chase", label: "完整追逐平均时长", metric: metrics.chase.averageChaseDuration, referenceText: "未设置诊断阈值" },
     { id: "chase.abandonedChaseCount", group: "chase", label: "放弃或转火追逐", metric: metrics.chase.abandonedChaseCount, referenceText: "未设置诊断阈值" },
-    { id: "generatorControl.highProgressGeneratorLosses", group: "generatorControl", label: "高进度发电机丢失", metric: metrics.generatorControl.highProgressGeneratorLosses, referenceText: `参考：≥ ${generatorLossThreshold} 台（高进度 ${highProgressLabel}）` },
+    { id: "generatorControl.highProgressGeneratorLosses", group: "generatorControl", label: "高进度发电机丢失", metric: metrics.generatorControl.highProgressGeneratorLosses, referenceText: `高进度口径：≥ ${highProgressLabel}` },
     { id: "generatorControl.keyGeneratorInterruptions", group: "generatorControl", label: "高进度有效干扰", metric: metrics.generatorControl.keyGeneratorInterruptions, referenceText: `高进度口径：≥ ${highProgressLabel}` },
-    { id: "hookYield.totalHooks", group: "hookYield", label: "有效挂钩总数", metric: metrics.hookYield.totalHooks, referenceText: `规则最低样本：${hookRule.minimumTotalHooks} 次` },
-    { id: "hookYield.uniqueSurvivorsHooked", group: "hookYield", label: "被挂钩逃生者数", metric: metrics.hookYield.uniqueSurvivorsHooked, referenceText: "未设置诊断阈值" },
-    { id: "hookYield.secondHookConversions", group: "hookYield", label: "获救后再次上钩", metric: metrics.hookYield.secondHookConversions, referenceText: `规则参考：< ${hookRule.maximumSecondHookConversionsExclusive} 人` },
-    { id: "hookYield.firstEliminationTime", group: "hookYield", label: "首次永久减员", metric: metrics.hookYield.firstEliminationTime, referenceText: "未设置诊断阈值" },
-    { id: "hookYield.firstHookChainEliminationTime", group: "hookYield", label: "首次挂钩链减员", metric: metrics.hookYield.firstHookChainEliminationTime, referenceText: `规则参考：> ${seconds(hookRule.lateEliminationThresholdMs)}` },
-    { id: "hookYield.hookConcentration", group: "hookYield", label: "挂钩集中度", metric: metrics.hookYield.hookConcentration, referenceText: "未设置诊断阈值" },
+    { id: "elimination.firstEliminationGeneratorsRemaining", group: "elimination", label: "首次减员时剩余修理目标", metric: metrics.elimination.firstEliminationGeneratorsRemaining, referenceText: `规则参考：≤ ${eliminationRule.maximumGeneratorsRemaining} 台` },
+    { id: "elimination.totalEliminations", group: "elimination", label: "永久减员总数", metric: metrics.elimination.totalEliminations, referenceText: "献祭、处决和流血死亡" },
   ];
 }
 
@@ -122,7 +114,7 @@ export function buildAnalysisPresentation(
   const metricMap = new Map(allMetrics.map((metric) => [metric.id, metric]));
   const feedback = rules.primaryFeedback;
   const preferredMetricIds: DisplayMetricId[] = feedback.ruleId === "no_clear_breakpoint"
-    ? ["chase.firstChaseToFirstHook", "finding.averageSearchGap", "generatorControl.highProgressGeneratorLosses"]
+    ? ["chase.firstChaseDuration", "engagement.averageChaseGap", "elimination.firstEliminationGeneratorsRemaining"]
     : feedback.triggeredMetricIds;
   const maxDisplayedMetrics = Number.isInteger(ruleConfig.maxDisplayedMetrics)
     ? Math.min(3, Math.max(1, ruleConfig.maxDisplayedMetrics))
