@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useState } from "react";
 import { DetailsPanel } from "../components/DetailsPanel";
 import { EventTimeline } from "../components/EventTimeline";
 import { Icon } from "../components/Icon";
+import { JsonDropzone } from "../components/JsonDropzone";
 import { MetricCards } from "../components/MetricCards";
 import { PrimaryFeedbackPanel } from "../components/PrimaryFeedbackPanel";
 import { RuleSettings, type RuleNumericSetting } from "../components/RuleSettings";
@@ -34,7 +35,6 @@ export function App() {
   const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   const [isGeneratorOpen, setIsGeneratorOpen] = useState(false);
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const analysis = useMemo(
     () => analyzeMatchJson(source, { metricConfig, ruleConfig }),
@@ -53,6 +53,10 @@ export function App() {
 
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
+    if (!file.name.toLowerCase().endsWith(".json")) {
+      setUploadError(`文件“${file.name}”不是 JSON 文件，只支持 .json 格式。`);
+      return;
+    }
     try {
       const uploadedSource = await file.text();
       setSelectedPresetId("uploaded");
@@ -158,17 +162,7 @@ export function App() {
                 {selectedPresetId === "generated" && <option value="generated">已生成 · {sourceName}</option>}
               </select>
             </label>
-            <input
-              ref={fileInputRef}
-              className="visually-hidden"
-              type="file"
-              accept="application/json,.json"
-              aria-label="上传 JSON 文件"
-              onChange={(event) => void handleUpload(event.target.files?.[0])}
-            />
-            <button className="button button--primary" type="button" onClick={() => fileInputRef.current?.click()}>
-              <Icon name="upload" />上传 JSON
-            </button>
+            <JsonDropzone onFile={(file) => void handleUpload(file)} />
             <button
               className="button button--secondary"
               type="button"
@@ -197,8 +191,8 @@ export function App() {
               <section className="error-panel" role="alert" aria-labelledby="upload-error-title">
                 <Icon name="warning" />
                 <div>
-                  <p className="section-kicker">文件读取失败</p>
-                  <h2 id="upload-error-title">暂时无法读取这份日志</h2>
+                  <p className="section-kicker">文件导入失败</p>
+                  <h2 id="upload-error-title">暂时无法导入这份日志</h2>
                   <p>{uploadError}</p>
                 </div>
               </section>
