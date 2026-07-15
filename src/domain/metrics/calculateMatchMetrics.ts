@@ -1,8 +1,8 @@
 import type { MatchLog } from "../log";
 import { calculateChaseMetrics } from "./calculateChaseMetrics";
-import { calculateFindingMetrics } from "./calculateFindingMetrics";
+import { calculateEliminationMetrics } from "./calculateEliminationMetrics";
+import { calculateEngagementMetrics } from "./calculateEngagementMetrics";
 import { calculateGeneratorControlMetrics } from "./calculateGeneratorControlMetrics";
-import { calculateHookYieldMetrics } from "./calculateHookYieldMetrics";
 import { canonicalizeEvents } from "./shared";
 import type { MatchMetrics, MetricConfig } from "./types";
 
@@ -17,10 +17,10 @@ export function calculateMatchMetrics(
   );
 
   return {
-    finding: calculateFindingMetrics(canonical.events),
+    engagement: calculateEngagementMetrics(canonical.events),
     chase: calculateChaseMetrics(canonical.events),
     generatorControl: generatorCalculation.metrics,
-    hookYield: calculateHookYieldMetrics(canonical.events),
+    elimination: calculateEliminationMetrics(canonical.events),
     diagnostics: [
       ...canonical.diagnostics,
       ...generatorCalculation.diagnostics,

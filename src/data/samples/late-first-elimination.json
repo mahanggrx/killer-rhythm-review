@@ -1,0 +1,32 @@
+{
+  "schemaVersion": "1.0",
+  "ruleset": "base_only_1v4_10.0.2",
+  "patch": "10.0.2",
+  "matchId": "portfolio-late-first-elimination",
+  "durationMs": 300000,
+  "survivors": ["survivor-1", "survivor-2", "survivor-3", "survivor-4"],
+  "generators": ["generator-1", "generator-2", "generator-3", "generator-4", "generator-5", "generator-6", "generator-7"],
+  "unsupportedMechanics": [],
+  "events": [
+    { "eventId": "le-001", "timestampMs": 0, "eventOrder": 0, "type": "trial_start" },
+    { "eventId": "le-002", "timestampMs": 10000, "eventOrder": 1, "type": "chase_start", "chaseId": "chase-1", "survivorId": "survivor-1", "source": "game_state" },
+    { "eventId": "le-003", "timestampMs": 20000, "eventOrder": 2, "type": "survivor_downed", "survivorId": "survivor-1", "fromState": "injured", "cause": "basic_attack", "attribution": "killer", "sourceId": "killer" },
+    { "eventId": "le-004", "timestampMs": 20000, "eventOrder": 3, "type": "chase_end", "chaseId": "chase-1", "survivorId": "survivor-1", "endReason": "target_downed", "censored": false, "policyGenerated": false },
+    { "eventId": "le-005", "timestampMs": 40000, "eventOrder": 4, "type": "chase_start", "chaseId": "chase-2", "survivorId": "survivor-2", "source": "game_state" },
+    { "eventId": "le-006", "timestampMs": 60000, "eventOrder": 5, "type": "chase_end", "chaseId": "chase-2", "survivorId": "survivor-2", "endReason": "target_switch", "censored": false, "policyGenerated": false },
+    { "eventId": "le-007", "timestampMs": 70000, "eventOrder": 6, "type": "generator_repair_stopped", "generatorId": "generator-1", "survivorId": "survivor-2", "progress": 0.8, "reason": "voluntary" },
+    { "eventId": "le-008", "timestampMs": 80000, "eventOrder": 7, "type": "generator_completed", "generatorId": "generator-1", "completionIndex": 1, "progress": 1, "contributors": ["survivor-2"] },
+    { "eventId": "le-009", "timestampMs": 90000, "eventOrder": 8, "type": "chase_start", "chaseId": "chase-3", "survivorId": "survivor-3", "source": "game_state" },
+    { "eventId": "le-010", "timestampMs": 110000, "eventOrder": 9, "type": "chase_end", "chaseId": "chase-3", "survivorId": "survivor-3", "endReason": "target_switch", "censored": false, "policyGenerated": false },
+    { "eventId": "le-011", "timestampMs": 110000, "eventOrder": 10, "type": "generator_repair_stopped", "generatorId": "generator-2", "survivorId": "survivor-4", "progress": 0.82, "reason": "voluntary" },
+    { "eventId": "le-012", "timestampMs": 120000, "eventOrder": 11, "type": "generator_completed", "generatorId": "generator-2", "completionIndex": 2, "progress": 1, "contributors": ["survivor-4"] },
+    { "eventId": "le-013", "timestampMs": 130000, "eventOrder": 12, "type": "chase_start", "chaseId": "chase-4", "survivorId": "survivor-4", "source": "game_state" },
+    { "eventId": "le-014", "timestampMs": 150000, "eventOrder": 13, "type": "chase_end", "chaseId": "chase-4", "survivorId": "survivor-4", "endReason": "target_switch", "censored": false, "policyGenerated": false },
+    { "eventId": "le-015", "timestampMs": 160000, "eventOrder": 14, "type": "generator_repair_stopped", "generatorId": "generator-3", "survivorId": "survivor-3", "progress": 0.85, "reason": "voluntary" },
+    { "eventId": "le-016", "timestampMs": 170000, "eventOrder": 15, "type": "generator_completed", "generatorId": "generator-3", "completionIndex": 3, "progress": 1, "contributors": ["survivor-3"] },
+    { "eventId": "le-017", "timestampMs": 210000, "eventOrder": 16, "type": "generator_repair_stopped", "generatorId": "generator-4", "survivorId": "survivor-2", "progress": 0.88, "reason": "voluntary" },
+    { "eventId": "le-018", "timestampMs": 220000, "eventOrder": 17, "type": "generator_completed", "generatorId": "generator-4", "completionIndex": 4, "progress": 1, "contributors": ["survivor-2", "survivor-3"] },
+    { "eventId": "le-019", "timestampMs": 260000, "eventOrder": 18, "type": "survivor_outcome", "survivorId": "survivor-1", "outcomeType": "bled_out", "cause": "bleedout_timer", "attribution": "killer" },
+    { "eventId": "le-020", "timestampMs": 300000, "eventOrder": 19, "type": "trial_end", "reason": "fixture_complete", "normalEnd": true }
+  ]
+}

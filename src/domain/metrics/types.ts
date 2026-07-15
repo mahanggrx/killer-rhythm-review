@@ -4,18 +4,14 @@ export type MetricUnit = "milliseconds" | "count" | "ratio";
 
 export type MetricUnavailableReasonCode =
   | "missing_trial_start"
-  | "missing_target_acquired"
-  | "insufficient_search_gap_samples"
-  | "insufficient_post_hook_samples"
   | "missing_chase_start"
+  | "missing_first_chase_end"
   | "missing_first_down"
-  | "missing_first_hook"
   | "no_complete_chases"
   | "no_generator_progress_evidence"
   | "invalid_high_progress_threshold"
   | "no_elimination_event"
-  | "no_hook_chain_elimination"
-  | "no_hooks_for_concentration"
+  | "abnormal_trial_end"
   | "non_finite_result"
   | "invalid_numeric_result";
 
@@ -61,15 +57,13 @@ export interface MetricDiagnostic {
   evidenceEventIds: EventId[];
 }
 
-export interface FindingMetrics {
-  firstFindTime: NumericMetric;
-  averageSearchGap: NumericMetric;
-  averagePostHookTargetAcquisition: NumericMetric;
+export interface EngagementMetrics {
+  averageChaseGap: NumericMetric;
 }
 
 export interface ChaseMetrics {
+  firstChaseDuration: NumericMetric;
   firstChaseToFirstDown: NumericMetric;
-  firstChaseToFirstHook: NumericMetric;
   averageChaseDuration: NumericMetric;
   abandonedChaseCount: NumericMetric;
 }
@@ -79,19 +73,15 @@ export interface GeneratorControlMetrics {
   keyGeneratorInterruptions: NumericMetric;
 }
 
-export interface HookYieldMetrics {
-  totalHooks: NumericMetric;
-  uniqueSurvivorsHooked: NumericMetric;
-  secondHookConversions: NumericMetric;
-  firstEliminationTime: NumericMetric;
-  firstHookChainEliminationTime: NumericMetric;
-  hookConcentration: NumericMetric;
+export interface EliminationMetrics {
+  firstEliminationGeneratorsRemaining: NumericMetric;
+  totalEliminations: NumericMetric;
 }
 
 export interface MatchMetrics {
-  finding: FindingMetrics;
+  engagement: EngagementMetrics;
   chase: ChaseMetrics;
   generatorControl: GeneratorControlMetrics;
-  hookYield: HookYieldMetrics;
+  elimination: EliminationMetrics;
   diagnostics: MetricDiagnostic[];
 }

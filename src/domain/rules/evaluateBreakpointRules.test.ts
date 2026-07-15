@@ -1,467 +1,278 @@
 import { describe, expect, it } from "vitest";
-import validSample from "../../data/samples/valid-base-match.json";
-import type { MatchLog } from "../log";
-import {
-  calculateMatchMetrics,
-  type AvailableMetric,
-  type MatchMetrics,
-  type MetricUnavailableReasonCode,
-  type MetricUnit,
-  type NumericMetric,
+import type {
+  MatchMetrics,
+  MetricUnavailableReasonCode,
+  NumericMetric,
 } from "../metrics";
-import {
-  DEFAULT_RULE_ENGINE_CONFIG,
-  validateRuleEngineConfig,
-} from "./config";
+import { DEFAULT_RULE_ENGINE_CONFIG, validateRuleEngineConfig } from "./config";
 import { evaluateBreakpointRules } from "./evaluateBreakpointRules";
 import type { RuleEngineConfig } from "./types";
 
-function baseMetrics(): MatchMetrics {
-  const log = structuredClone(validSample) as unknown as MatchLog;
-  return calculateMatchMetrics(log, { highProgressThreshold: 0.7 });
-}
-
 function available(
   value: number,
-  unit: MetricUnit,
-  sampleSize: number,
-  eventId: string,
-  confidence = 1,
-): AvailableMetric {
+  unit: NumericMetric["unit"] = "milliseconds",
+  sampleSize = 1,
+  evidenceEventIds: string[] = ["evidence"],
+): NumericMetric {
   return {
     status: "available",
     value,
     unit,
-    explanation: "规则引擎测试指标。",
-    evidenceEventIds: [eventId],
+    explanation: "测试指标",
+    evidenceEventIds,
     sampleSize,
-    confidence,
+    confidence: 1,
   };
 }
 
 function unavailable(
-  reasonCode: MetricUnavailableReasonCode,
-  eventId: string,
+  code: MetricUnavailableReasonCode,
+  unit: NumericMetric["unit"] = "milliseconds",
 ): NumericMetric {
   return {
     status: "unavailable",
     value: null,
-    unit: "milliseconds",
-    explanation: "规则引擎测试不可用指标。",
-    evidenceEventIds: [eventId],
+    unit,
+    explanation: "测试不可用指标",
+    evidenceEventIds: [],
     sampleSize: 0,
-    reason: {
-      code: reasonCode,
-      message: "测试指标不可用。",
-    },
+    reason: { code, message: "测试不可用原因" },
   };
 }
 
-function cloneConfig(): RuleEngineConfig {
-  return structuredClone(DEFAULT_RULE_ENGINE_CONFIG);
+function baseMetrics(): MatchMetrics {
+  return {
+    engagement: {
+      averageChaseGap: available(17_500, "milliseconds", 2),
+    },
+    chase: {
+      firstChaseDuration: available(30_000),
+      firstChaseToFirstDown: available(30_000),
+      averageChaseDuration: available(30_000, "milliseconds", 2),
+      abandonedChaseCount: available(0, "count", 2),
+    },
+    generatorControl: {
+      highProgressGeneratorLosses: available(0, "count"),
+      keyGeneratorInterruptions: available(1, "count"),
+    },
+    elimination: {
+      firstEliminationGeneratorsRemaining: available(3, "count"),
+      totalEliminations: available(1, "count"),
+    },
+    diagnostics: [],
+  };
 }
 
-describe("规则配置", () => {
-  it("默认 rules.json 通过运行时配置校验", () => {
+function evaluate(
+  metrics: MatchMetrics,
+  config: RuleEngineConfig = structuredClone(DEFAULT_RULE_ENGINE_CONFIG),
+) {
+  return evaluateBreakpointRules(metrics, config);
+}
+
+describe("validateRuleEngineConfig", () => {
+  it("接受包含三条新口径规则的默认配置", () => {
     const result = validateRuleEngineConfig(DEFAULT_RULE_ENGINE_CONFIG);
 
     expect(result.ok).toBe(true);
-    expect(result.errors).toEqual([]);
-    expect(result.data?.maxDisplayedMetrics).toBe(3);
-    expect(result.data?.prototypeThresholdNotice).toContain("原型待验证");
+    expect(result.data?.priority).toHaveLength(3);
   });
 
-  it("拒绝越界阈值和不完整优先级", () => {
-    const config = cloneConfig();
+  it("拒绝非法阈值和缺失规则优先级", () => {
+    const config = structuredClone(DEFAULT_RULE_ENGINE_CONFIG) as unknown as {
+      rules: Record<string, Record<string, unknown>>;
+      priority: string[];
+    };
     config.rules.FIRST_CHASE_TOO_LONG.thresholdMs = -1;
-    config.priorityByExperience.novice = ["FIRST_CHASE_TOO_LONG"];
+    config.rules.LATE_FIRST_ELIMINATION.maximumGeneratorsRemaining = 6;
+    config.priority = ["FIRST_CHASE_TOO_LONG"];
 
     const result = validateRuleEngineConfig(config);
 
     expect(result.ok).toBe(false);
-    expect(result.errors).toEqual(
-      expect.arrayContaining([
-        expect.stringContaining("thresholdMs"),
-        expect.stringContaining("priorityByExperience.novice"),
-      ]),
-    );
+    expect(result.errors.join(" ")).toContain("thresholdMs");
+    expect(result.errors.join(" ")).toContain("maximumGeneratorsRemaining");
+    expect(result.errors.join(" ")).toContain("全部三个规则");
   });
 });
 
 describe("evaluateBreakpointRules", () => {
-  it("触发 FIRST_CHASE_TOO_LONG 并返回解释和证据", () => {
-    const metrics = baseMetrics();
-    metrics.chase.firstChaseToFirstHook = available(
-      80_000,
-      "milliseconds",
-      1,
-      "first-hook-evidence",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "novice",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("FIRST_CHASE_TOO_LONG");
-    expect(result.primaryFeedback.severity).toBe("moderate");
-    expect(result.primaryFeedback.evidenceEventIds).toEqual([
-      "first-hook-evidence",
-    ]);
-    expect(result.primaryFeedback.triggeredMetricIds).toEqual([
-      "chase.firstChaseToFirstHook",
-    ]);
-    expect(result.primaryFeedback.practiceGoal).toContain("强资源区");
-    expect(result.prototypeThresholdNotice).toContain("原型待验证");
-  });
-
-  it("严格遵守大于边界，等于 75 秒时不触发首追规则", () => {
-    const metrics = baseMetrics();
-    metrics.chase.firstChaseToFirstHook = available(
-      75_000,
-      "milliseconds",
-      1,
-      "boundary-event",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "novice",
-    });
+  it("没有规则越过阈值时返回 no_clear_breakpoint", () => {
+    const result = evaluate(baseMetrics());
 
     expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
     expect(result.triggeredCandidates).toEqual([]);
   });
 
-  it("分别触发找人和控机规则，并遵守各自比较运算符", () => {
-    const searchMetrics = baseMetrics();
-    searchMetrics.finding.averageSearchGap = available(
-      30_001,
-      "milliseconds",
-      2,
-      "search-gap-evidence",
-    );
-    const searchResult = evaluateBreakpointRules(searchMetrics, {
-      playerExperience: "novice",
-    });
-
-    expect(searchResult.primaryFeedback.ruleId).toBe("SEARCH_GAP_TOO_LONG");
-
-    const generatorMetrics = baseMetrics();
-    generatorMetrics.generatorControl.highProgressGeneratorLosses = available(
-      2,
-      "count",
-      2,
-      "generator-loss-evidence",
-    );
-    const generatorResult = evaluateBreakpointRules(generatorMetrics, {
-      playerExperience: "intermediate",
-    });
-
-    expect(generatorResult.primaryFeedback.ruleId).toBe(
-      "GENERATOR_CONTROL_WEAK",
-    );
-  });
-
-  it("在挂钩数、转化机会和减员条件同时满足时触发挂钩压力规则", () => {
+  it("使用首次 chase_start 到匹配 chase_end 的时长触发首追规则", () => {
     const metrics = baseMetrics();
-    metrics.hookYield.totalHooks = available(
-      4,
-      "count",
-      4,
-      "total-hooks-evidence",
-    );
-    metrics.hookYield.secondHookConversions = available(
-      0,
-      "count",
-      2,
-      "conversion-evidence",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "intermediate",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("HOOK_PRESSURE_DIFFUSE");
-    expect(result.primaryFeedback.severity).toBe("high");
-    expect(result.primaryFeedback.triggeredMetricIds).toEqual([
-      "hookYield.totalHooks",
-      "hookYield.secondHookConversions",
-      "hookYield.firstHookChainEliminationTime",
-    ]);
-    expect(result.primaryFeedback.evidence).toHaveLength(3);
-    expect(result.primaryFeedback.evidence[2]).toEqual(
-      expect.objectContaining({
-        status: "unavailable",
-        unavailableReasonCode: "no_hook_chain_elimination",
-      }),
-    );
-  });
-
-  it("有减员时仅在严格晚于配置阈值后触发挂钩压力规则", () => {
-    const atBoundaryMetrics = baseMetrics();
-    atBoundaryMetrics.hookYield.totalHooks = available(
-      4,
-      "count",
-      4,
-      "total-hooks-evidence",
-    );
-    atBoundaryMetrics.hookYield.secondHookConversions = available(
-      0,
-      "count",
-      1,
-      "conversion-evidence",
-    );
-    atBoundaryMetrics.hookYield.firstHookChainEliminationTime = available(
-      300_000,
+    metrics.chase.firstChaseDuration = available(
+      78_000,
       "milliseconds",
       1,
-      "elimination-evidence",
+      ["chase-start", "chase-end"],
     );
 
-    const atBoundary = evaluateBreakpointRules(atBoundaryMetrics, {
-      playerExperience: "intermediate",
-    });
-    expect(atBoundary.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
-
-    const lateMetrics = structuredClone(atBoundaryMetrics);
-    lateMetrics.hookYield.firstHookChainEliminationTime = available(
-      300_001,
-      "milliseconds",
-      1,
-      "late-elimination-evidence",
-    );
-    const late = evaluateBreakpointRules(lateMetrics, {
-      playerExperience: "intermediate",
-    });
-    expect(late.primaryFeedback.ruleId).toBe("HOOK_PRESSURE_DIFFUSE");
-  });
-
-  it("缺少计时起点导致的减员指标不可用，不等同于本局没有减员", () => {
-    const metrics = baseMetrics();
-    metrics.hookYield.totalHooks = available(
-      4,
-      "count",
-      4,
-      "total-hooks-evidence",
-    );
-    metrics.hookYield.secondHookConversions = available(
-      0,
-      "count",
-      1,
-      "conversion-evidence",
-    );
-    metrics.hookYield.firstHookChainEliminationTime = unavailable(
-      "missing_trial_start",
-      "missing-trial-start",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "intermediate",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
-    expect(result.diagnostics).toEqual([
-      expect.objectContaining({
-        ruleId: "HOOK_PRESSURE_DIFFUSE",
-        metricIds: ["hookYield.firstHookChainEliminationTime"],
-      }),
-    ]);
-  });
-
-  it("挂钩转化机会样本不足时不触发，避免用零值强行归因", () => {
-    const metrics = baseMetrics();
-    metrics.hookYield.totalHooks = available(
-      4,
-      "count",
-      4,
-      "total-hooks-evidence",
-    );
-    metrics.hookYield.secondHookConversions = available(
-      0,
-      "count",
-      0,
-      "no-opportunity-evidence",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "intermediate",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
-    expect(result.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "metric_unavailable",
-        ruleId: "HOOK_PRESSURE_DIFFUSE",
-        metricIds: ["hookYield.secondHookConversions"],
-      }),
-    ]);
-  });
-
-  it("指标不可用时不触发对应规则，并返回诊断", () => {
-    const metrics = baseMetrics();
-    metrics.chase.firstChaseToFirstHook = unavailable(
-      "missing_first_hook",
-      "missing-hook-evidence",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "novice",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
-    expect(result.diagnostics).toEqual([
-      expect.objectContaining({
-        code: "metric_unavailable",
-        ruleId: "FIRST_CHASE_TOO_LONG",
-      }),
-    ]);
-  });
-
-  it("没有规则触发时确定性返回 no_clear_breakpoint", () => {
-    const metrics = baseMetrics();
-
-    const first = evaluateBreakpointRules(metrics, {
-      playerExperience: "novice",
-    });
-    const second = evaluateBreakpointRules(metrics, {
-      playerExperience: "novice",
-    });
-
-    expect(first).toEqual(second);
-    expect(first.primaryFeedback).toEqual(
-      expect.objectContaining({
-        ruleId: "no_clear_breakpoint",
-        severity: "none",
-        triggeredMetricIds: [],
-      }),
-    );
-  });
-
-  it("证据充分性相同时按相对阈值偏离选择主要断点", () => {
-    const metrics = baseMetrics();
-    metrics.chase.firstChaseToFirstHook = available(
-      82_500,
-      "milliseconds",
-      1,
-      "first-hook-evidence",
-    );
-    metrics.finding.averageSearchGap = available(
-      60_000,
-      "milliseconds",
-      1,
-      "search-gap-evidence",
-    );
-
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "novice",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("SEARCH_GAP_TOO_LONG");
-    expect(result.triggeredCandidates.map((candidate) => candidate.ruleId)).toEqual(
-      ["SEARCH_GAP_TOO_LONG", "FIRST_CHASE_TOO_LONG"],
-    );
-  });
-
-  it("证据、偏离和置信度并列时按可配置经验优先级选择唯一主反馈", () => {
-    const config = cloneConfig();
-    config.rules.GENERATOR_CONTROL_WEAK.minimumLosses = 5;
-    const metrics = baseMetrics();
-    metrics.chase.firstChaseToFirstHook = available(
-      90_000,
-      "milliseconds",
-      1,
-      "first-hook-evidence",
-    );
-    metrics.generatorControl.highProgressGeneratorLosses = available(
-      6,
-      "count",
-      1,
-      "generator-loss-evidence",
-    );
-
-    const noviceResult = evaluateBreakpointRules(
-      metrics,
-      { playerExperience: "novice" },
-      config,
-    );
-    const intermediateResult = evaluateBreakpointRules(
-      metrics,
-      { playerExperience: "intermediate" },
-      config,
-    );
-
-    expect(noviceResult.primaryFeedback.ruleId).toBe("FIRST_CHASE_TOO_LONG");
-    expect(intermediateResult.primaryFeedback.ruleId).toBe(
-      "GENERATOR_CONTROL_WEAK",
-    );
-  });
-
-  it("人工事件置信度优先于同等偏离下的玩家阶段顺序", () => {
-    const config = cloneConfig();
-    config.priorityByExperience.novice = [
-      "SEARCH_GAP_TOO_LONG",
-      "FIRST_CHASE_TOO_LONG",
-      "GENERATOR_CONTROL_WEAK",
-      "HOOK_PRESSURE_DIFFUSE",
-    ];
-    const metrics = baseMetrics();
-    metrics.chase.firstChaseToFirstHook = available(
-      90_000,
-      "milliseconds",
-      1,
-      "first-hook-evidence",
-      1,
-    );
-    metrics.finding.averageSearchGap = available(
-      36_000,
-      "milliseconds",
-      1,
-      "uncertain-search-evidence",
-      0.5,
-    );
-
-    const result = evaluateBreakpointRules(
-      metrics,
-      { playerExperience: "novice" },
-      config,
-    );
+    const result = evaluate(metrics);
 
     expect(result.primaryFeedback.ruleId).toBe("FIRST_CHASE_TOO_LONG");
+    expect(result.primaryFeedback.triggeredMetricIds).toEqual([
+      "chase.firstChaseDuration",
+    ]);
+    expect(result.primaryFeedback.evidenceEventIds).toEqual([
+      "chase-start",
+      "chase-end",
+    ]);
   });
 
-  it("处决或流血减员不会替代普通挂钩链减员条件", () => {
+  it("首追恰好等于阈值时不触发", () => {
     const metrics = baseMetrics();
-    metrics.hookYield.totalHooks = available(4, "count", 4, "hooks");
-    metrics.hookYield.secondHookConversions = available(0, "count", 2, "conversions");
-    metrics.hookYield.firstEliminationTime = available(120_000, "milliseconds", 1, "mori");
-    metrics.hookYield.firstHookChainEliminationTime = unavailable(
-      "no_hook_chain_elimination",
-      "no-hook-chain",
-    );
+    metrics.chase.firstChaseDuration = available(75_000);
 
-    const result = evaluateBreakpointRules(metrics, {
-      playerExperience: "intermediate",
-    });
-
-    expect(result.primaryFeedback.ruleId).toBe("HOOK_PRESSURE_DIFFUSE");
-    expect(result.primaryFeedback.triggeredMetricIds).toContain(
-      "hookYield.firstHookChainEliminationTime",
+    expect(evaluate(metrics).primaryFeedback.ruleId).toBe(
+      "no_clear_breakpoint",
     );
   });
 
-  it("无效规则配置不会进入引擎或产生强制归因", () => {
-    const config = cloneConfig();
-    config.maxDisplayedMetrics = 4;
+  it("平均追逐空窗过长时触发接敌空窗规则", () => {
+    const metrics = baseMetrics();
+    metrics.engagement.averageChaseGap = available(50_000, "milliseconds", 3);
+
+    const result = evaluate(metrics);
+
+    expect(result.primaryFeedback.ruleId).toBe("ENGAGEMENT_GAP_TOO_LONG");
+    expect(result.primaryFeedback.triggeredMetricIds).toEqual([
+      "engagement.averageChaseGap",
+    ]);
+  });
+
+  it("平均追逐空窗恰好等于阈值时不触发", () => {
+    const metrics = baseMetrics();
+    metrics.engagement.averageChaseGap = available(30_000, "milliseconds", 2);
+
+    expect(evaluate(metrics).primaryFeedback.ruleId).toBe("no_clear_breakpoint");
+  });
+
+  it("首次减员时剩余修理目标不高于阈值时触发减员规则", () => {
+    const metrics = baseMetrics();
+    metrics.elimination.firstEliminationGeneratorsRemaining = available(
+      1,
+      "count",
+      1,
+      ["gen-1", "gen-2", "gen-3", "gen-4", "elimination"],
+    );
+
+    const result = evaluate(metrics);
+
+    expect(result.primaryFeedback.ruleId).toBe("LATE_FIRST_ELIMINATION");
+    expect(result.primaryFeedback.triggeredMetricIds).toEqual([
+      "elimination.firstEliminationGeneratorsRemaining",
+    ]);
+    expect(result.primaryFeedback.practiceGoal).not.toMatch(/针对|守尸/);
+  });
+
+  it("首次减员时仍剩两台修理目标不触发默认规则", () => {
+    const metrics = baseMetrics();
+    metrics.elimination.firstEliminationGeneratorsRemaining = available(2, "count");
+
+    expect(evaluate(metrics).primaryFeedback.ruleId).toBe(
+      "no_clear_breakpoint",
+    );
+  });
+
+  it("正常结束且没有永久减员时以最终结果触发减员规则", () => {
+    const metrics = baseMetrics();
+    metrics.elimination.firstEliminationGeneratorsRemaining = unavailable(
+      "no_elimination_event",
+      "count",
+    );
+    metrics.elimination.totalEliminations = available(
+      0,
+      "count",
+      1,
+      ["trial-end"],
+    );
+
+    const result = evaluate(metrics);
+
+    expect(result.primaryFeedback.ruleId).toBe("LATE_FIRST_ELIMINATION");
+    expect(result.primaryFeedback.triggeredMetricIds).toEqual([
+      "elimination.totalEliminations",
+    ]);
+  });
+
+  it("异常结束且没有减员证据时不强行归因", () => {
+    const metrics = baseMetrics();
+    metrics.elimination.firstEliminationGeneratorsRemaining = unavailable(
+      "no_elimination_event",
+      "count",
+    );
+    metrics.elimination.totalEliminations = unavailable(
+      "abnormal_trial_end",
+      "count",
+    );
+
+    const result = evaluate(metrics);
+
+    expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
+    expect(result.diagnostics).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ ruleId: "LATE_FIRST_ELIMINATION" }),
+      ]),
+    );
+  });
+
+  it("规则关闭后不参与候选", () => {
+    const metrics = baseMetrics();
+    metrics.chase.firstChaseDuration = available(100_000);
+    const config = structuredClone(DEFAULT_RULE_ENGINE_CONFIG);
+    config.rules.FIRST_CHASE_TOO_LONG.enabled = false;
+
+    expect(evaluate(metrics, config).primaryFeedback.ruleId).toBe(
+      "no_clear_breakpoint",
+    );
+  });
+
+  it("指标不可用或样本不足时返回诊断而不触发", () => {
+    const metrics = baseMetrics();
+    metrics.chase.firstChaseDuration = unavailable("missing_first_chase_end");
+    metrics.engagement.averageChaseGap = available(60_000, "milliseconds", 0);
+
+    const result = evaluate(metrics);
+
+    expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
+    expect(result.diagnostics.length).toBeGreaterThanOrEqual(2);
+  });
+
+  it("同等证据和偏离下按单一固定优先级确定唯一结果", () => {
+    const metrics = baseMetrics();
+    metrics.chase.firstChaseDuration = available(150_000);
+    metrics.engagement.averageChaseGap = available(60_000);
+    metrics.elimination.firstEliminationGeneratorsRemaining = available(0, "count");
+
+    expect(evaluate(metrics).primaryFeedback.ruleId).toBe("FIRST_CHASE_TOO_LONG");
+  });
+
+  it("相同输入重复计算得到完全相同的排序", () => {
+    const metrics = baseMetrics();
+    metrics.chase.firstChaseDuration = available(100_000);
+    metrics.engagement.averageChaseGap = available(50_000);
+
+    expect(evaluate(metrics)).toEqual(evaluate(metrics));
+  });
+
+  it("无效配置安全返回 no_clear_breakpoint", () => {
+    const config = structuredClone(DEFAULT_RULE_ENGINE_CONFIG) as unknown as {
+      rules: { FIRST_CHASE_TOO_LONG: { thresholdMs: number } };
+    };
+    config.rules.FIRST_CHASE_TOO_LONG.thresholdMs = Number.NaN;
 
     const result = evaluateBreakpointRules(
       baseMetrics(),
-      { playerExperience: "novice" },
       config,
     );
 
     expect(result.primaryFeedback.ruleId).toBe("no_clear_breakpoint");
-    expect(result.triggeredCandidates).toEqual([]);
-    expect(result.diagnostics[0]).toEqual(
-      expect.objectContaining({ code: "invalid_rule_config" }),
-    );
+    expect(result.diagnostics[0].code).toBe("invalid_rule_config");
   });
 });

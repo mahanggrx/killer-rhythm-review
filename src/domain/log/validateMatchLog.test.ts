@@ -14,7 +14,7 @@ describe("validateMatchLog", () => {
 
     expect(result.ok).toBe(true);
     expect(result.errors).toEqual([]);
-    expect(result.data?.events).toHaveLength(23);
+    expect(result.data?.events).toHaveLength(21);
   });
 
   it("为重复 ID、未知事件、非法进度和缺少结束事件返回明确错误", () => {
@@ -34,17 +34,37 @@ describe("validateMatchLog", () => {
   it("拒绝引用未声明逃生者的事件", () => {
     const input = structuredClone(validSample);
     const targetEvent = input.events.find(
-      (event) => event.type === "target_acquired",
+      (event) => event.type === "chase_start",
     );
 
     if (!targetEvent || !("survivorId" in targetEvent)) {
-      throw new Error("测试样例缺少 target_acquired");
+      throw new Error("测试样例缺少 chase_start");
     }
 
     targetEvent.survivorId = "survivor-not-declared";
     const result = validateMatchLog(input);
 
     expect(errorCodes(result)).toContain("UNKNOWN_SURVIVOR_ID");
+  });
+
+  it("拒绝基础 schema 中已移除的人工 target_acquired 事件", () => {
+    const input = structuredClone(validSample) as unknown as {
+      events: Array<Record<string, unknown>>;
+    };
+    input.events.push({
+      eventId: "legacy-target-acquired",
+      timestampMs: 11_000,
+      eventOrder: 99,
+      type: "target_acquired",
+      survivorId: "survivor-1",
+      evidenceType: "direct_los",
+      confidence: "confirmed",
+      observerNote: "旧版人工标注事件",
+    });
+
+    const result = validateMatchLog(input);
+
+    expect(errorCodes(result)).toContain("UNKNOWN_EVENT_TYPE");
   });
 
   it("拒绝越界的挂钩阶段", () => {

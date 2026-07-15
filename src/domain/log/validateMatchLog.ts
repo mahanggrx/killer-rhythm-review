@@ -14,18 +14,6 @@ type UnknownRecord = Record<string, unknown>;
 
 const supportedEventTypes = new Set<string>(SUPPORTED_EVENT_TYPES);
 
-const targetEvidenceTypes = [
-  "direct_los",
-  "aura",
-  "scream",
-  "killer_instinct",
-  "scratch_marks",
-  "blood",
-  "sound",
-  "manual",
-] as const;
-
-const evidenceConfidences = ["confirmed", "probable", "uncertain"] as const;
 const chaseEndReasons = [
   "lost_los",
   "range_break",
@@ -474,34 +462,13 @@ function validateEventFields(
     case "trial_start":
       return;
 
-    case "target_acquired":
-      survivor();
-      requireEnum(
-        event,
-        "evidenceType",
-        targetEvidenceTypes,
-        path,
-        errors,
-        eventIndex,
-      );
-      requireEnum(
-        event,
-        "confidence",
-        evidenceConfidences,
-        path,
-        errors,
-        eventIndex,
-      );
-      requireString(event, "observerNote", path, errors, eventIndex);
-      return;
-
     case "chase_start":
       survivor();
       requireString(event, "chaseId", path, errors, eventIndex);
       requireEnum(
         event,
         "source",
-        ["game_state", "manual"],
+        ["game_state"],
         path,
         errors,
         eventIndex,

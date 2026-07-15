@@ -3,24 +3,18 @@ import type { MatchMetrics, MetricUnit } from "../metrics";
 import type { FeedbackRuleId, RuleEngineResult } from "../rules";
 import type { TimelineItem } from "../timeline";
 
-export type MetricGroupId = "finding" | "chase" | "generatorControl" | "hookYield";
+export type MetricGroupId = "engagement" | "chase" | "generatorControl" | "elimination";
 
 export type DisplayMetricId =
-  | "finding.firstFindTime"
-  | "finding.averageSearchGap"
-  | "finding.averagePostHookTargetAcquisition"
+  | "engagement.averageChaseGap"
+  | "chase.firstChaseDuration"
   | "chase.firstChaseToFirstDown"
-  | "chase.firstChaseToFirstHook"
   | "chase.averageChaseDuration"
   | "chase.abandonedChaseCount"
   | "generatorControl.highProgressGeneratorLosses"
   | "generatorControl.keyGeneratorInterruptions"
-  | "hookYield.totalHooks"
-  | "hookYield.uniqueSurvivorsHooked"
-  | "hookYield.secondHookConversions"
-  | "hookYield.firstEliminationTime"
-  | "hookYield.firstHookChainEliminationTime"
-  | "hookYield.hookConcentration";
+  | "elimination.firstEliminationGeneratorsRemaining"
+  | "elimination.totalEliminations";
 
 export interface MetricDisplayItem {
   id: DisplayMetricId;

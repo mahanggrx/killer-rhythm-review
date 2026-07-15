@@ -46,6 +46,23 @@ function requirePositiveInteger(
   }
 }
 
+function requireIntegerInRange(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+  path: string,
+  errors: string[],
+): void {
+  if (
+    !Number.isInteger(value)
+    || !isFiniteNumber(value)
+    || value < minimum
+    || value > maximum
+  ) {
+    errors.push(`${path} 必须是 ${minimum} 到 ${maximum} 之间的整数。`);
+  }
+}
+
 function validateSeverityFields(
   rule: UnknownRecord,
   path: string,
@@ -105,7 +122,7 @@ function validatePriority(
     RULE_IDS.every((ruleId) => uniqueValues.has(ruleId));
 
   if (!isExactRuleSet) {
-    errors.push(`${path} 必须且只能包含全部四个规则 ID 各一次。`);
+    errors.push(`${path} 必须且只能包含全部三个规则 ID 各一次。`);
   }
 }
 
@@ -170,20 +187,7 @@ export function validateRuleEngineConfig(
     }
   }
 
-  if (!isRecord(input.priorityByExperience)) {
-    errors.push("priorityByExperience 必须是对象。");
-  } else {
-    validatePriority(
-      input.priorityByExperience.novice,
-      "priorityByExperience.novice",
-      errors,
-    );
-    validatePriority(
-      input.priorityByExperience.intermediate,
-      "priorityByExperience.intermediate",
-      errors,
-    );
-  }
+  validatePriority(input.priority, "priority", errors);
 
   if (!isRecord(input.rules)) {
     errors.push("rules 必须是对象。");
@@ -193,19 +197,14 @@ export function validateRuleEngineConfig(
       "FIRST_CHASE_TOO_LONG",
       errors,
     );
-    const searchRule = validateRuleRecord(
+    const eliminationRule = validateRuleRecord(
       input.rules,
-      "SEARCH_GAP_TOO_LONG",
+      "LATE_FIRST_ELIMINATION",
       errors,
     );
-    const generatorRule = validateRuleRecord(
+    const engagementRule = validateRuleRecord(
       input.rules,
-      "GENERATOR_CONTROL_WEAK",
-      errors,
-    );
-    const hookRule = validateRuleRecord(
-      input.rules,
-      "HOOK_PRESSURE_DIFFUSE",
+      "ENGAGEMENT_GAP_TOO_LONG",
       errors,
     );
 
@@ -222,56 +221,35 @@ export function validateRuleEngineConfig(
       );
     }
 
-    if (searchRule) {
+    if (engagementRule) {
       requirePositiveNumber(
-        searchRule.thresholdMs,
-        "rules.SEARCH_GAP_TOO_LONG.thresholdMs",
+        engagementRule.thresholdMs,
+        "rules.ENGAGEMENT_GAP_TOO_LONG.thresholdMs",
         errors,
       );
       requirePositiveInteger(
-        searchRule.minimumSampleSize,
-        "rules.SEARCH_GAP_TOO_LONG.minimumSampleSize",
+        engagementRule.minimumSampleSize,
+        "rules.ENGAGEMENT_GAP_TOO_LONG.minimumSampleSize",
         errors,
       );
     }
 
-    if (generatorRule) {
-      requirePositiveInteger(
-        generatorRule.minimumLosses,
-        "rules.GENERATOR_CONTROL_WEAK.minimumLosses",
+    if (eliminationRule) {
+      requireIntegerInRange(
+        eliminationRule.maximumGeneratorsRemaining,
+        0,
+        5,
+        "rules.LATE_FIRST_ELIMINATION.maximumGeneratorsRemaining",
         errors,
       );
       requirePositiveInteger(
-        generatorRule.minimumSampleSize,
-        "rules.GENERATOR_CONTROL_WEAK.minimumSampleSize",
-        errors,
-      );
-    }
-
-    if (hookRule) {
-      requirePositiveInteger(
-        hookRule.minimumTotalHooks,
-        "rules.HOOK_PRESSURE_DIFFUSE.minimumTotalHooks",
-        errors,
-      );
-      requirePositiveInteger(
-        hookRule.maximumSecondHookConversionsExclusive,
-        "rules.HOOK_PRESSURE_DIFFUSE.maximumSecondHookConversionsExclusive",
-        errors,
-      );
-      requirePositiveInteger(
-        hookRule.minimumConversionOpportunities,
-        "rules.HOOK_PRESSURE_DIFFUSE.minimumConversionOpportunities",
-        errors,
-      );
-      requirePositiveNumber(
-        hookRule.lateEliminationThresholdMs,
-        "rules.HOOK_PRESSURE_DIFFUSE.lateEliminationThresholdMs",
+        eliminationRule.minimumSampleSize,
+        "rules.LATE_FIRST_ELIMINATION.minimumSampleSize",
         errors,
       );
       requireNonNegativeNumber(
-        hookRule.noEliminationRelativeDeviation,
-        "rules.HOOK_PRESSURE_DIFFUSE.noEliminationRelativeDeviation",
+        eliminationRule.noEliminationRelativeDeviation,
+        "rules.LATE_FIRST_ELIMINATION.noEliminationRelativeDeviation",
         errors,
       );
     }

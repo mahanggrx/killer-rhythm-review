@@ -4,7 +4,6 @@ export const SUPPORTED_PATCH = "10.0.2" as const;
 
 export const SUPPORTED_EVENT_TYPES = [
   "trial_start",
-  "target_acquired",
   "chase_start",
   "chase_end",
   "survivor_injured",
@@ -53,18 +52,6 @@ export type SurvivorOutcome =
   | "bled_out"
   | "escaped";
 
-export type TargetEvidenceType =
-  | "direct_los"
-  | "aura"
-  | "scream"
-  | "killer_instinct"
-  | "scratch_marks"
-  | "blood"
-  | "sound"
-  | "manual";
-
-export type EvidenceConfidence = "confirmed" | "probable" | "uncertain";
-
 export type ChaseEndReason =
   | "lost_los"
   | "range_break"
@@ -83,18 +70,10 @@ export interface BaseMatchEvent<TType extends MatchEventType> {
 
 export type TrialStartEvent = BaseMatchEvent<"trial_start">;
 
-export interface TargetAcquiredEvent
-  extends BaseMatchEvent<"target_acquired"> {
-  survivorId: SurvivorId;
-  evidenceType: TargetEvidenceType;
-  confidence: EvidenceConfidence;
-  observerNote: string;
-}
-
 export interface ChaseStartEvent extends BaseMatchEvent<"chase_start"> {
   chaseId: ChaseId;
   survivorId: SurvivorId;
-  source: "game_state" | "manual";
+  source: "game_state";
 }
 
 export interface ChaseEndEvent extends BaseMatchEvent<"chase_end"> {
@@ -282,7 +261,6 @@ export interface TrialEndEvent extends BaseMatchEvent<"trial_end"> {
 
 export type MatchEvent =
   | TrialStartEvent
-  | TargetAcquiredEvent
   | ChaseStartEvent
   | ChaseEndEvent
   | SurvivorInjuredEvent

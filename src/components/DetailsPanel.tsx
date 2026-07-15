@@ -58,7 +58,7 @@ export function DetailsPanel({ groups, metrics, rules, warnings }: DetailsPanelP
         <section className="rule-detail" aria-labelledby="rule-detail-title">
           <p className="section-kicker">确定性规则</p>
           <h3 id="rule-detail-title">{rules.primaryFeedback.ruleId}</h3>
-          <p>共触发 {rules.triggeredCandidates.length} 条候选规则，按有效样本形成的证据充分性、相对阈值偏离、事件证据置信度、玩家阶段同等证据优先级与稳定 ID 排序。</p>
+          <p>共触发 {rules.triggeredCandidates.length} 条候选规则，按有效样本形成的证据充分性、相对阈值偏离、规则置信度、玩家阶段同等证据优先级与稳定 ID 排序。</p>
           {rules.triggeredCandidates.length > 0 && (
             <ol>{rules.triggeredCandidates.map((candidate) => <li key={candidate.ruleId}><strong>{candidate.ruleId}</strong><span>{candidate.title}</span></li>)}</ol>
           )}

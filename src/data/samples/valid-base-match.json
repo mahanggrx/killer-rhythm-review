@@ -23,16 +23,6 @@
       "type": "trial_start"
     },
     {
-      "eventId": "event-002",
-      "timestampMs": 10000,
-      "eventOrder": 1,
-      "type": "target_acquired",
-      "survivorId": "survivor-1",
-      "evidenceType": "direct_los",
-      "confidence": "confirmed",
-      "observerNote": "杀手确认目标位置并开始接近。"
-    },
-    {
       "eventId": "event-003",
       "timestampMs": 12000,
       "eventOrder": 2,
@@ -130,16 +120,6 @@
       "progress": 0.7,
       "source": "killer_kick",
       "regressionEventIndex": 1
-    },
-    {
-      "eventId": "event-012",
-      "timestampMs": 85000,
-      "eventOrder": 11,
-      "type": "target_acquired",
-      "survivorId": "survivor-2",
-      "evidenceType": "scratch_marks",
-      "confidence": "probable",
-      "observerNote": "杀手根据足迹确认下一名目标的移动方向。"
     },
     {
       "eventId": "event-013",
@@ -251,4 +231,3 @@
     }
   ]
 }
-
