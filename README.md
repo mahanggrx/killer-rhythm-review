@@ -4,6 +4,10 @@
 
 当前版本已经完成从“选择、上传或按指标生成日志”到“获得唯一主要反馈”的最小可验证纵切，并提供适合作品集演示的响应式单页界面。
 
+## 在线演示
+
+[打开杀手节奏复盘反馈系统](https://mahanggrx.github.io/killer-rhythm-review/)
+
 ## 当前已实现
 
 - 定义 `base_only_1v4_10.0.2` 基线下的 `MatchLog` 与 `MatchEvent` 判别联合类型。
@@ -66,6 +70,14 @@ npm run build
 ```
 
 构建产物位于 `dist/`，可以部署到静态网站托管服务。
+
+GitHub Pages 使用专用仓库路径构建：
+
+```bash
+npm run build:pages
+```
+
+推送到 `main` 后，`.github/workflows/deploy-pages.yml` 会自动执行测试、类型检查、构建与部署。
 
 ## 项目边界
 
