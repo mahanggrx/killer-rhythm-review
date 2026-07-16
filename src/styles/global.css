@@ -205,6 +205,42 @@ select { width: 100%; padding: 0 40px 0 12px; }
   background: #0f1114;
 }
 .generator-form input:focus { border-color: var(--accent-bright); box-shadow: 0 0 0 1px var(--accent-bright); outline: 0; }
+.generator-advanced {
+  grid-column: 1 / -1;
+  border: 1px solid var(--line);
+  background: rgb(9 11 14 / 42%);
+}
+.generator-advanced summary {
+  display: flex;
+  min-height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 0 15px;
+  color: var(--muted-strong);
+  font-size: 0.76rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.generator-advanced summary::marker { color: var(--accent-bright); }
+.generator-advanced summary > span::before {
+  content: "+";
+  display: inline-block;
+  width: 1em;
+  margin-right: 7px;
+  color: var(--accent-bright);
+}
+.generator-advanced[open] summary > span::before { content: "−"; }
+.generator-advanced summary small { color: #777a80; font-size: 0.66rem; font-weight: 500; }
+.generator-advanced[open] summary { border-bottom: 1px solid var(--line); }
+.generator-advanced__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  padding: 16px;
+  align-items: end;
+}
+.generator-advanced__grid .field-control { grid-template-rows: minmax(2.2em, auto) 42px; }
 .generator-form__action { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; margin-top: 4px; }
 .generator-form__action p { margin: 0; color: #777a80; font-size: 0.68rem; }
 .generator-errors { display: flex; gap: 12px; padding: 13px 15px; border: 1px solid rgb(223 109 82 / 32%); background: rgb(48 24 23 / 35%); color: var(--accent-bright); }
@@ -394,6 +430,7 @@ footer p { margin: 0; }
   .settings-panel { position: static; }
   .rule-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .generator-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .generator-advanced__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @media (max-width: 760px) {
@@ -407,6 +444,8 @@ footer p { margin: 0; }
   .generator-panel { margin-top: -12px; }
   .generator-panel__heading, .generator-form__action { align-items: stretch; flex-direction: column; }
   .generator-form { grid-template-columns: 1fr; }
+  .generator-advanced summary { align-items: flex-start; flex-direction: column; gap: 4px; padding-block: 12px; }
+  .generator-advanced__grid { grid-template-columns: 1fr; }
   .generator-output { grid-template-columns: 1fr; }
   .feedback-panel { grid-template-columns: 38px minmax(0, 1fr); padding: 22px; }
   .feedback-panel__signal { width: 38px; height: 38px; }

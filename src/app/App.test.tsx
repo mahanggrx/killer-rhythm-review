@@ -171,6 +171,44 @@ describe("App", () => {
     expect(screen.getByText("自定义合成日志", { selector: ".source-status strong" })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "有效接敌空窗较长" })).toBeInTheDocument();
     expect((screen.getByLabelText("生成的 JSON") as HTMLTextAreaElement).value)
-      .toContain('"matchId": "synthetic-50-20-3"');
+      .toContain('"matchId": "synthetic-50-20-3-c2-d20_20-a1-l2-i0-e1"');
+  });
+
+  it("填写高级设置后生成并展示全部回算结果", () => {
+    render(<App />);
+
+    fireEvent.click(screen.getByRole("button", { name: /按指标生成日志/ }));
+    fireEvent.click(screen.getByText("高级设置"));
+    fireEvent.change(screen.getByLabelText("完整追逐次数"), {
+      target: { value: "4" },
+    });
+    fireEvent.change(screen.getByLabelText("平均追逐持续时间（秒）"), {
+      target: { value: "40" },
+    });
+    fireEvent.change(screen.getByLabelText("目标丢失或转火次数"), {
+      target: { value: "2" },
+    });
+    fireEvent.change(screen.getByLabelText("高进度发电机丢失数"), {
+      target: { value: "1" },
+    });
+    fireEvent.change(screen.getByLabelText("高进度有效干扰次数"), {
+      target: { value: "3" },
+    });
+    fireEvent.change(screen.getByLabelText("最终永久减员数"), {
+      target: { value: "2" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /生成并分析/ }));
+
+    expect(screen.getByText("已通过日志校验与指标回算")).toBeInTheDocument();
+    const verificationLabel = (name: string) => screen.getByText(name, {
+      selector: ".generator-verification dt",
+    }).parentElement;
+
+    expect(verificationLabel("完整追逐")).toHaveTextContent("4 次");
+    expect(verificationLabel("平均追逐时长")).toHaveTextContent("40 秒");
+    expect(verificationLabel("目标丢失或转火")).toHaveTextContent("2 次");
+    expect(verificationLabel("高进度电机丢失")).toHaveTextContent("1 台");
+    expect(verificationLabel("高进度有效干扰")).toHaveTextContent("3 次");
+    expect(verificationLabel("最终永久减员")).toHaveTextContent("2 人");
   });
 });

@@ -7,11 +7,17 @@ import {
 } from ".";
 
 describe("generateSyntheticMatchLog", () => {
-  it("生成可通过现有校验并精确回算四项输入指标的日志", () => {
+  it("生成可通过现有校验并精确回算核心与高级指标的日志", () => {
     const result = generateSyntheticMatchLog({
       averageChaseGapSeconds: 50,
       firstChaseDurationSeconds: 35,
       generatorsRemainingAtFirstElimination: 1,
+      completeChaseCount: 4,
+      averageChaseDurationSeconds: 30,
+      abandonedChaseCount: 2,
+      highProgressGeneratorLosses: 3,
+      keyGeneratorInterruptions: 2,
+      totalEliminations: 3,
     });
 
     expect(result.ok).toBe(true);
@@ -22,6 +28,12 @@ describe("generateSyntheticMatchLog", () => {
       averageChaseGapSeconds: 50,
       firstChaseDurationSeconds: 35,
       generatorsRemainingAtFirstElimination: 1,
+      completeChaseCount: 4,
+      averageChaseDurationSeconds: 30,
+      abandonedChaseCount: 2,
+      highProgressGeneratorLosses: 3,
+      keyGeneratorInterruptions: 2,
+      totalEliminations: 3,
     });
     expect(result.log.events.at(0)?.type).toBe("trial_start");
     expect(result.log.events.at(-1)?.type).toBe("trial_end");
@@ -44,6 +56,17 @@ describe("generateSyntheticMatchLog", () => {
     if (!first.ok || !second.ok) return;
 
     expect(first.source).toBe(second.source);
+    expect(first.verification).toEqual({
+      averageChaseGapSeconds: 20,
+      firstChaseDurationSeconds: 78,
+      generatorsRemainingAtFirstElimination: 2,
+      completeChaseCount: 2,
+      averageChaseDurationSeconds: 49,
+      abandonedChaseCount: 1,
+      highProgressGeneratorLosses: 3,
+      keyGeneratorInterruptions: 0,
+      totalEliminations: 1,
+    });
   });
 
   it("支持零平均追逐空窗和剩余发电机边界", () => {
@@ -64,6 +87,9 @@ describe("generateSyntheticMatchLog", () => {
 
     expect(allCompleted.verification.generatorsRemainingAtFirstElimination).toBe(0);
     expect(noneCompleted.verification.generatorsRemainingAtFirstElimination).toBe(5);
+    expect(noneCompleted.verification.highProgressGeneratorLosses).toBe(0);
+    expect(noneCompleted.verification.keyGeneratorInterruptions).toBe(0);
+    expect(Object.values(noneCompleted.verification).every(Number.isFinite)).toBe(true);
   });
 
   it("拒绝负数、非整数和越界发电机数量", () => {
@@ -88,5 +114,59 @@ describe("generateSyntheticMatchLog", () => {
     });
 
     expect(issues[0]?.code).toBe("NOT_FINITE");
+  });
+
+  it("允许在首次减员后补足高进度丢机，并保持首次减员口径不变", () => {
+    const result = generateSyntheticMatchLog({
+      averageChaseGapSeconds: 10,
+      firstChaseDurationSeconds: 30,
+      generatorsRemainingAtFirstElimination: 5,
+      highProgressGeneratorLosses: 5,
+      totalEliminations: 4,
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+
+    expect(result.verification.generatorsRemainingAtFirstElimination).toBe(5);
+    expect(result.verification.highProgressGeneratorLosses).toBe(5);
+    expect(result.verification.totalEliminations).toBe(4);
+  });
+
+  it("拒绝互相冲突的追逐次数、平均时长和中断次数", () => {
+    const tooManyAbandoned = validateSyntheticLogInput({
+      averageChaseGapSeconds: 10,
+      firstChaseDurationSeconds: 30,
+      generatorsRemainingAtFirstElimination: 3,
+      completeChaseCount: 2,
+      abandonedChaseCount: 3,
+    });
+    const impossibleAverage = validateSyntheticLogInput({
+      averageChaseGapSeconds: 10,
+      firstChaseDurationSeconds: 100,
+      generatorsRemainingAtFirstElimination: 3,
+      completeChaseCount: 2,
+      averageChaseDurationSeconds: 10,
+    });
+    const singleChaseMismatch = validateSyntheticLogInput({
+      averageChaseGapSeconds: 10,
+      firstChaseDurationSeconds: 30,
+      generatorsRemainingAtFirstElimination: 3,
+      completeChaseCount: 1,
+      averageChaseDurationSeconds: 20,
+    });
+
+    expect(tooManyAbandoned).toContainEqual(expect.objectContaining({
+      field: "abandonedChaseCount",
+      code: "INCONSISTENT_INPUT",
+    }));
+    expect(impossibleAverage).toContainEqual(expect.objectContaining({
+      field: "averageChaseDurationSeconds",
+      code: "INCONSISTENT_INPUT",
+    }));
+    expect(singleChaseMismatch).toContainEqual(expect.objectContaining({
+      field: "averageChaseDurationSeconds",
+      code: "INCONSISTENT_INPUT",
+    }));
   });
 });
