@@ -75,7 +75,7 @@ export function calculateChaseMetrics(
       "milliseconds",
       "missing_chase_start",
       "没有追逐开始事件。",
-      "从第一次 chase_start 到同一 chaseId 的非删失 chase_end，表示首个正式追逐区间的持续时间。",
+      "从第一次 chase_start 到同一 chaseId 的明确 chase_end，表示首个正式追逐区间的持续时间。",
     );
     firstChaseToFirstDown = unavailableMetric(
       "milliseconds",
@@ -122,7 +122,7 @@ export function calculateChaseMetrics(
       ? availableMetric(
           firstChaseEnd.timestampMs - firstChase.timestampMs,
           "milliseconds",
-          "从第一次 chase_start 到同一 chaseId 的非删失 chase_end；是否倒地、转火或丢失目标由结束原因单独说明，不以挂钩作为追逐结束。",
+          "从第一次 chase_start 到同一 chaseId 的明确 chase_end；是否倒地、转火或丢失目标由结束原因单独说明，不以挂钩作为追逐结束。",
           chaseEvidence,
           1,
         )
@@ -130,9 +130,9 @@ export function calculateChaseMetrics(
           "milliseconds",
           "missing_first_chase_end",
           firstChaseEnd
-            ? "第一次追逐在对局结束时被删失，不能作为完整首追时长。"
+            ? "第一次追逐直到对局结束仍未结束，不能作为完整首追时长。"
             : "第一次追逐没有对应的结束事件。",
-          "从第一次 chase_start 到同一 chaseId 的非删失 chase_end。",
+          "从第一次 chase_start 到同一 chaseId 的明确 chase_end。",
           chaseEvidence,
         );
 
@@ -166,14 +166,14 @@ export function calculateChaseMetrics(
       ? unavailableMetric(
           "milliseconds",
           "no_complete_chases",
-          "没有非删失且起止完整的追逐区间。",
-          "按独立 chaseId 配对 chase_start 与 chase_end；未结束或 censored 的追逐不进入平均值。",
+          "没有起止完整的追逐区间。",
+          "按独立 chaseId 配对 chase_start 与 chase_end；直到对局结束仍未结束的追逐不进入平均值。",
           censoredEvidenceIds,
         )
       : availableMetric(
           averageDuration,
           "milliseconds",
-          "所有非删失完整追逐的平均纯追逐时长，按独立 chaseId 配对，允许追逐短暂并发。",
+          "所有起止完整追逐的平均纯追逐时长，按独立 chaseId 配对，允许追逐短暂并发。",
           completeEvidenceIds,
           completeChases.length,
         );

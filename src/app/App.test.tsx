@@ -180,7 +180,7 @@ describe("App", () => {
     fireEvent.click(screen.getByRole("button", { name: /按指标生成日志/ }));
     fireEvent.click(screen.getByText("高级设置"));
 
-    expect(screen.getByText(/若在下一次杀手造成即时掉进度、开始回退或封锁前完成/))
+    expect(screen.getByText(/“控机”指杀手行为实际造成发电机即时掉进度、开始回退或封锁/))
       .toBeInTheDocument();
     expect(screen.getByText(/逃生者自行停修不计/)).toBeInTheDocument();
 
@@ -193,10 +193,10 @@ describe("App", () => {
     fireEvent.change(screen.getByLabelText("目标丢失或转火次数"), {
       target: { value: "2" },
     });
-    fireEvent.change(screen.getByLabelText("达到 70% 后、掉进度回退封锁前完成的电机数量"), {
+    fireEvent.change(screen.getByLabelText("高进度电机达到 70% 后未被控机即被修开的数量"), {
       target: { value: "1" },
     });
-    fireEvent.change(screen.getByLabelText("进度达到 70% 时生效的掉进度回退封锁次数"), {
+    fireEvent.change(screen.getByLabelText("对进度达到 70% 的高进度电机的控机次数"), {
       target: { value: "3" },
     });
     fireEvent.change(screen.getByLabelText("最终永久减员数"), {
@@ -212,8 +212,8 @@ describe("App", () => {
     expect(verificationLabel("完整追逐")).toHaveTextContent("4 次");
     expect(verificationLabel("平均追逐时长")).toHaveTextContent("40 秒");
     expect(verificationLabel("目标丢失或转火")).toHaveTextContent("2 次");
-    expect(verificationLabel("≥ 70% 后、掉进度／回退／封锁前完成")).toHaveTextContent("1 台");
-    expect(verificationLabel("≥ 70% 时生效的掉进度／回退／封锁")).toHaveTextContent("3 次");
+    expect(verificationLabel("高进度电机 ≥ 70% 后未被控机即修开")).toHaveTextContent("1 台");
+    expect(verificationLabel("对进度 ≥ 70% 的高进度电机控机")).toHaveTextContent("3 次");
     expect(verificationLabel("最终永久减员")).toHaveTextContent("2 人");
   });
 });

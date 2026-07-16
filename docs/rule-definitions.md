@@ -10,7 +10,7 @@
 
 | 规则 | 维度 | 默认触发条件 |
 | --- | --- | --- |
-| `FIRST_CHASE_TOO_LONG` | 追击 | `firstChaseDuration > 75000ms`，且首个追逐是非删失完整区间。只计算同一 `chaseId` 的正式追逐起止。 |
+| `FIRST_CHASE_TOO_LONG` | 追击 | `firstChaseDuration > 75000ms`，且首个追逐有明确的开始和结束。只计算同一 `chaseId` 的正式追逐起止。 |
 | `LATE_FIRST_ELIMINATION` | 减员结果 | `firstEliminationGeneratorsRemaining <= 1`；或者对局正常结束且 `totalEliminations = 0`。不检查挂钩分布，不区分献祭、处决和流血减员的打法优劣。 |
 | `ENGAGEMENT_GAP_TOO_LONG` | 接敌 | `averageChaseGap > 30000ms`，且指标达到最低样本要求。开局空窗和后续完整追逐间空窗使用同一平均口径。 |
 

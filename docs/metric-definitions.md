@@ -25,9 +25,9 @@
 
 | 指标 | 当前口径 |
 | --- | --- |
-| `firstChaseDuration` | 首个 `chase_start` 到同一 `chaseId` 的非删失 `chase_end`。不以倒地、抱起或挂钩代替结束；结束原因单独保留。 |
+| `firstChaseDuration` | 首个 `chase_start` 到同一 `chaseId` 的明确 `chase_end`。不以倒地、抱起或挂钩代替结束；直到对局结束仍未结束的追逐不计；结束原因单独保留。 |
 | `firstChaseToFirstDown` | 首次 `chase_start` 到同一 `chaseId`、同一逃生者在该追逐内首次由杀手归因的 `survivor_downed`，不包含搬运。 |
-| `averageChaseDuration` | 按独立 `chaseId` 配对的非删失完整追逐平均时长；未结束或 `censored` 区间不计入。 |
+| `averageChaseDuration` | 按独立 `chaseId` 配对的完整追逐平均时长；直到对局结束仍未结束的追逐不计入。 |
 | `abandonedChaseCount` | 结束原因为 `lost_los`、`range_break`、`locker` 或 `target_switch` 的完整追逐数。该指标不声称知道玩家是否主观放弃。 |
 
 ## 发电机控制
@@ -44,9 +44,10 @@
 ### 页面展示口径与示例
 
 - 默认配置以进度 ≥ 70% 作为包含边界，70% 属于原型待验证数值；阈值修改后，页面标签和解释同步更新。
-- `highProgressGeneratorLosses`：例如发电机达到 80% 后，在下一次杀手造成即时掉进度、开始回退或封锁前完成，记 1 台；同一台发电机最多记 1 台。
-- `keyGeneratorInterruptions`：例如发电机处于 80% 时，一次踢机使其即时掉进度并开始回退，记 1 次而不是 2 次，因为同一次行为的多个效果共享 `interferenceId`。
-- 杀手靠近发电机、驱离逃生者，或者逃生者自行停止修理，但没有产生即时掉进度、回退开始或封锁事件，均不计为有效干扰。
+- 本文“控机”指杀手行为实际造成发电机即时掉进度、开始回退或封锁。
+- `highProgressGeneratorLosses`：例如高进度发电机达到 80% 后，未被控机即修开，记 1 台；同一台发电机最多记 1 台。
+- `keyGeneratorInterruptions`：例如对进度达到 80% 的高进度发电机踢机，使其即时掉进度并开始回退，记 1 次而不是 2 次，因为同一次行为的多个效果共享 `interferenceId`。
+- 杀手靠近发电机、驱离逃生者，或者逃生者自行停止修理，但没有实际造成即时掉进度、回退开始或封锁，均不计为控机。
 
 ## 永久减员结果
 
