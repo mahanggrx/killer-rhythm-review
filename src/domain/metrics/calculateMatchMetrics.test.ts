@@ -191,7 +191,7 @@ describe("calculateMatchMetrics", () => {
     );
     const losses = result.generatorControl.highProgressGeneratorLosses;
     if (losses.status === "unavailable") {
-      expect(losses.reason.message).toContain("不代表损失为 0");
+      expect(losses.reason.message).toContain("不代表数量为 0");
     }
   });
 
