@@ -104,14 +104,14 @@ const NUMERIC_FIELD_RULES: readonly NumericFieldRule[] = [
   },
   {
     field: "highProgressGeneratorLosses",
-    label: "高进度发电机丢失数",
+    label: "达到阈值后、掉进度回退封锁前完成的电机数量",
     minimum: 0,
     maximum: SYNTHETIC_LOG_LIMITS.maximumHighProgressGeneratorLosses,
     required: false,
   },
   {
     field: "keyGeneratorInterruptions",
-    label: "高进度有效干扰次数",
+    label: "达到阈值时生效的掉进度回退封锁次数",
     minimum: 0,
     maximum: SYNTHETIC_LOG_LIMITS.maximumKeyGeneratorInterruptions,
     required: false,

@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { DEFAULT_METRIC_CONFIG } from "../config/metricThresholds";
 import {
   DEFAULT_SYNTHETIC_LOG_INPUT,
   generateSyntheticMatchLog,
@@ -15,6 +16,10 @@ interface SyntheticLogGeneratorProps {
 }
 
 type GeneratorFormValues = Record<SyntheticLogInputField, string>;
+
+const DEFAULT_HIGH_PROGRESS_PERCENT = Math.round(
+  DEFAULT_METRIC_CONFIG.highProgressThreshold * 100,
+);
 
 function toFormValues(
   input: Readonly<SyntheticLogInput>,
@@ -171,8 +176,9 @@ export function SyntheticLogGenerator({
           </summary>
           <div className="generator-advanced__grid">
             <label className="field-control">
-              <span>完整追逐次数</span>
+              <span>完整追逐区间数</span>
               <input
+                aria-label="完整追逐次数"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumCompleteChases}
                 max={SYNTHETIC_LOG_LIMITS.maximumCompleteChases}
@@ -181,10 +187,14 @@ export function SyntheticLogGenerator({
                 value={values.completeChaseCount}
                 onChange={(event) => updateValue("completeChaseCount", event.target.value)}
               />
+              <small className="field-control__help">
+                具有明确追逐开始与非删失追逐结束的区间数量；未结束追逐不计。
+              </small>
             </label>
             <label className="field-control">
-              <span>平均追逐持续时间（秒）</span>
+              <span>完整追逐平均时长（秒）</span>
               <input
+                aria-label="平均追逐持续时间（秒）"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds}
                 max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
@@ -196,10 +206,14 @@ export function SyntheticLogGenerator({
                   event.target.value,
                 )}
               />
+              <small className="field-control__help">
+                从追逐生效到同一次追逐结束，不包含之后的搬运或挂钩。
+              </small>
             </label>
             <label className="field-control">
-              <span>目标丢失或转火次数</span>
+              <span>以目标丢失或转火结束的追逐数</span>
               <input
+                aria-label="目标丢失或转火次数"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumAbandonedChases}
                 max={SYNTHETIC_LOG_LIMITS.maximumCompleteChases}
@@ -208,10 +222,14 @@ export function SyntheticLogGenerator({
                 value={values.abandonedChaseCount}
                 onChange={(event) => updateValue("abandonedChaseCount", event.target.value)}
               />
+              <small className="field-control__help">
+                目标丢失、距离中断、逃生者进柜或转火，均记 1 次。
+              </small>
             </label>
             <label className="field-control">
-              <span>高进度发电机丢失数</span>
+              <span>达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，掉进度／回退／封锁前完成的电机（台）</span>
               <input
+                aria-label={`达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 后、掉进度回退封锁前完成的电机数量`}
                 type="number"
                 min="0"
                 max={SYNTHETIC_LOG_LIMITS.maximumHighProgressGeneratorLosses}
@@ -223,10 +241,14 @@ export function SyntheticLogGenerator({
                   event.target.value,
                 )}
               />
+              <small className="field-control__help">
+                发电机进度达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，若在下一次杀手造成即时掉进度、开始回退或封锁前完成，记 1 台；同一台最多记 1 台。
+              </small>
             </label>
             <label className="field-control">
-              <span>高进度有效干扰次数</span>
+              <span>进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 时生效的掉进度／回退／封锁（次）</span>
               <input
+                aria-label={`进度达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 时生效的掉进度回退封锁次数`}
                 type="number"
                 min="0"
                 max={SYNTHETIC_LOG_LIMITS.maximumKeyGeneratorInterruptions}
@@ -238,10 +260,14 @@ export function SyntheticLogGenerator({
                   event.target.value,
                 )}
               />
+              <small className="field-control__help">
+                干扰前进度达到 {DEFAULT_HIGH_PROGRESS_PERCENT}%，且杀手行为实际造成即时掉进度、开始回退或封锁，记 1 次；同一次行为只记 1 次，逃生者自行停修不计。
+              </small>
             </label>
             <label className="field-control">
-              <span>最终永久减员数</span>
+              <span>最终永久减员数（人）</span>
               <input
+                aria-label="最终永久减员数"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumEliminations}
                 max={SYNTHETIC_LOG_LIMITS.maximumEliminations}
@@ -250,6 +276,9 @@ export function SyntheticLogGenerator({
                 value={values.totalEliminations}
                 onChange={(event) => updateValue("totalEliminations", event.target.value)}
               />
+              <small className="field-control__help">
+                献祭、处决或流血死亡算永久减员；逃脱和 BOT 接管不算。
+              </small>
             </label>
           </div>
         </details>
@@ -280,8 +309,8 @@ export function SyntheticLogGenerator({
               <div><dt>完整追逐</dt><dd>{generated.verification.completeChaseCount} 次</dd></div>
               <div><dt>平均追逐时长</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} 秒</dd></div>
               <div><dt>目标丢失或转火</dt><dd>{generated.verification.abandonedChaseCount} 次</dd></div>
-              <div><dt>高进度电机丢失</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
-              <div><dt>高进度有效干扰</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>
+              <div><dt>≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 后、掉进度／回退／封锁前完成</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
+              <div><dt>≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 时生效的掉进度／回退／封锁</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>
               <div><dt>最终永久减员</dt><dd>{generated.verification.totalEliminations} 人</dd></div>
             </dl>
           </div>
