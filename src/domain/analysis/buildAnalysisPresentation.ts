@@ -97,8 +97,8 @@ function createMetricDefinitions(
     { id: "chase.firstChaseToFirstDown", group: "chase", label: "首追至首次倒地", metric: metrics.chase.firstChaseToFirstDown, referenceText: "未设置诊断阈值" },
     { id: "chase.averageChaseDuration", group: "chase", label: "完整追逐平均时长", metric: metrics.chase.averageChaseDuration, referenceText: "未设置诊断阈值" },
     { id: "chase.abandonedChaseCount", group: "chase", label: "放弃或转火追逐", metric: metrics.chase.abandonedChaseCount, referenceText: "未设置诊断阈值" },
-    { id: "generatorControl.highProgressGeneratorLosses", group: "generatorControl", label: `≥ ${highProgressLabel} 后、掉进度／回退／封锁前完成的电机`, metric: metrics.generatorControl.highProgressGeneratorLosses, referenceText: "同一台发电机最多计 1 台" },
-    { id: "generatorControl.keyGeneratorInterruptions", group: "generatorControl", label: `≥ ${highProgressLabel} 时生效的掉进度／回退／封锁`, metric: metrics.generatorControl.keyGeneratorInterruptions, referenceText: "同一次杀手行为的多个效果合并为 1 次" },
+    { id: "generatorControl.highProgressGeneratorLosses", group: "generatorControl", label: `高进度电机达到 ${highProgressLabel} 后未被控机即修开`, metric: metrics.generatorControl.highProgressGeneratorLosses, referenceText: "控机指即时掉进度、开始回退或封锁；同一台最多计 1 台" },
+    { id: "generatorControl.keyGeneratorInterruptions", group: "generatorControl", label: `对进度 ≥ ${highProgressLabel} 的高进度电机控机`, metric: metrics.generatorControl.keyGeneratorInterruptions, referenceText: "同一次杀手行为的多个控机效果合并为 1 次" },
     { id: "elimination.firstEliminationGeneratorsRemaining", group: "elimination", label: "首次减员时剩余修理目标", metric: metrics.elimination.firstEliminationGeneratorsRemaining, referenceText: `规则参考：≤ ${eliminationRule.maximumGeneratorsRemaining} 台` },
     { id: "elimination.totalEliminations", group: "elimination", label: "永久减员总数", metric: metrics.elimination.totalEliminations, referenceText: "献祭、处决和流血死亡" },
   ];

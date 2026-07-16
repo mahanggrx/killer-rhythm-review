@@ -95,13 +95,13 @@ export function calculateGeneratorControlMetrics(
         "count",
         "invalid_high_progress_threshold",
         "高进度阈值必须是 0 到 1 之间的有限数值。",
-        "发电机达到配置阈值后，在下一次杀手造成即时掉进度、开始回退或封锁前完成的发电机数量。",
+        "高进度发电机达到配置阈值后，未被控机即修开的数量。控机指杀手行为实际造成即时掉进度、开始回退或封锁。",
       ),
       keyGeneratorInterruptions: unavailableMetric(
         "count",
         "invalid_high_progress_threshold",
         "高进度阈值必须是 0 到 1 之间的有限数值。",
-        "干扰前进度达到配置阈值，且杀手行为实际造成即时掉进度、开始回退或封锁的次数，按 interferenceId 去重。",
+        "对达到配置阈值的高进度发电机的控机次数，按 interferenceId 去重。控机指杀手行为实际造成即时掉进度、开始回退或封锁。",
       ),
     };
 
@@ -122,7 +122,7 @@ export function calculateGeneratorControlMetrics(
     (highProgressThreshold * 100).toFixed(2),
   )}%`;
   const explanationSuffix =
-    `本次计算使用进度 ≥ ${thresholdLabel} 的包含边界；该阈值为原型待验证数值。`;
+    `“控机”指杀手行为实际造成发电机即时掉进度、开始回退或封锁。本次计算使用进度 ≥ ${thresholdLabel} 的包含边界；该阈值为原型待验证数值。`;
 
   const progressEvidenceEvents = events.filter(
     (event) =>
@@ -136,14 +136,14 @@ export function calculateGeneratorControlMetrics(
       highProgressGeneratorLosses: unavailableMetric(
         "count",
         "no_generator_progress_evidence",
-        `日志没有记录发电机完成前的阶段进度，无法判断它是否达到 ${thresholdLabel}，也无法判断完成前是否发生掉进度、回退或封锁；这不代表数量为 0。`,
-        `发电机进度达到 ${thresholdLabel} 后，在下一次杀手造成即时掉进度、开始回退或封锁前完成的发电机数量。${explanationSuffix}`,
+        `日志没有记录发电机完成前的阶段进度，无法判断它是否达到 ${thresholdLabel}，也无法判断完成前是否被控机；这不代表数量为 0。`,
+        `高进度发电机达到 ${thresholdLabel} 后，未被控机即修开的数量。${explanationSuffix}`,
       ),
       keyGeneratorInterruptions: unavailableMetric(
         "count",
         "no_generator_progress_evidence",
-        `日志没有发电机阶段进度或杀手干扰证据，不能判断进度达到 ${thresholdLabel} 时生效的掉进度、回退或封锁次数；这不代表次数为 0。`,
-        `干扰前进度达到 ${thresholdLabel}，且杀手行为实际造成即时掉进度、开始回退或封锁的次数，按 interferenceId 去重。${explanationSuffix}`,
+        `日志没有发电机阶段进度或杀手控机证据，不能判断对进度达到 ${thresholdLabel} 的高进度发电机的控机次数；这不代表次数为 0。`,
+        `对进度达到 ${thresholdLabel} 的高进度发电机的控机次数，按 interferenceId 去重。${explanationSuffix}`,
       ),
     };
 
@@ -268,14 +268,14 @@ export function calculateGeneratorControlMetrics(
     highProgressGeneratorLosses: availableMetric(
       lostGeneratorIds.size,
       "count",
-      `统计进度达到 ${thresholdLabel} 后、在下一次杀手造成即时掉进度、开始回退或封锁前完成的不同发电机；同一台电机最多计 1 台。${explanationSuffix}`,
+      `统计达到 ${thresholdLabel} 后、未被控机即修开的不同高进度发电机；同一台电机最多计 1 台。${explanationSuffix}`,
       lossEvidenceIds,
       highProgressEpisodeCount,
     ),
     keyGeneratorInterruptions: availableMetric(
       qualifyingInterferences.size,
       "count",
-      `只统计干扰前进度达到 ${thresholdLabel}，且确实造成即时掉进度、开始回退或封锁的杀手行为；逃生者自行停修不计，同一次行为的多个效果按 interferenceId 合并为 1 次。${explanationSuffix}`,
+      `只统计对进度达到 ${thresholdLabel} 的高进度发电机确实生效的控机；逃生者自行停修不计，同一次行为的多个效果按 interferenceId 合并为 1 次。${explanationSuffix}`,
       interruptionEvidenceIds,
       qualifyingInterferences.size,
     ),

@@ -188,7 +188,7 @@ export function SyntheticLogGenerator({
                 onChange={(event) => updateValue("completeChaseCount", event.target.value)}
               />
               <small className="field-control__help">
-                具有明确追逐开始与非删失追逐结束的区间数量；未结束追逐不计。
+                具有明确追逐开始与追逐结束的区间数量；未结束追逐不计。
               </small>
             </label>
             <label className="field-control">
@@ -227,9 +227,9 @@ export function SyntheticLogGenerator({
               </small>
             </label>
             <label className="field-control">
-              <span>达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，掉进度／回退／封锁前完成的电机（台）</span>
+              <span>高进度电机达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，未被控机即被修开的数量（台）</span>
               <input
-                aria-label={`达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 后、掉进度回退封锁前完成的电机数量`}
+                aria-label={`高进度电机达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 后未被控机即被修开的数量`}
                 type="number"
                 min="0"
                 max={SYNTHETIC_LOG_LIMITS.maximumHighProgressGeneratorLosses}
@@ -242,13 +242,13 @@ export function SyntheticLogGenerator({
                 )}
               />
               <small className="field-control__help">
-                发电机进度达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，若在下一次杀手造成即时掉进度、开始回退或封锁前完成，记 1 台；同一台最多记 1 台。
+                “控机”指杀手行为实际造成发电机即时掉进度、开始回退或封锁。高进度电机达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，在下一次控机前完成，记 1 台；同一台最多记 1 台。
               </small>
             </label>
             <label className="field-control">
-              <span>进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 时生效的掉进度／回退／封锁（次）</span>
+              <span>对进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机的控机次数</span>
               <input
-                aria-label={`进度达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 时生效的掉进度回退封锁次数`}
+                aria-label={`对进度达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机的控机次数`}
                 type="number"
                 min="0"
                 max={SYNTHETIC_LOG_LIMITS.maximumKeyGeneratorInterruptions}
@@ -261,7 +261,7 @@ export function SyntheticLogGenerator({
                 )}
               />
               <small className="field-control__help">
-                干扰前进度达到 {DEFAULT_HIGH_PROGRESS_PERCENT}%，且杀手行为实际造成即时掉进度、开始回退或封锁，记 1 次；同一次行为只记 1 次，逃生者自行停修不计。
+                “控机”采用相同定义；同一次杀手行为即使同时造成掉进度和回退，也只记 1 次。逃生者自行停修不计。
               </small>
             </label>
             <label className="field-control">
@@ -309,8 +309,8 @@ export function SyntheticLogGenerator({
               <div><dt>完整追逐</dt><dd>{generated.verification.completeChaseCount} 次</dd></div>
               <div><dt>平均追逐时长</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} 秒</dd></div>
               <div><dt>目标丢失或转火</dt><dd>{generated.verification.abandonedChaseCount} 次</dd></div>
-              <div><dt>≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 后、掉进度／回退／封锁前完成</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
-              <div><dt>≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 时生效的掉进度／回退／封锁</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>
+              <div><dt>高进度电机 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 后未被控机即修开</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
+              <div><dt>对进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机控机</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>
               <div><dt>最终永久减员</dt><dd>{generated.verification.totalEliminations} 人</dd></div>
             </dl>
           </div>
