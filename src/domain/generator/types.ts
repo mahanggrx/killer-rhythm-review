@@ -4,6 +4,12 @@ export interface SyntheticLogInput {
   averageChaseGapSeconds: number;
   firstChaseDurationSeconds: number;
   generatorsRemainingAtFirstElimination: number;
+  completeChaseCount?: number;
+  averageChaseDurationSeconds?: number;
+  abandonedChaseCount?: number;
+  highProgressGeneratorLosses?: number;
+  keyGeneratorInterruptions?: number;
+  totalEliminations?: number;
 }
 
 export type SyntheticLogInputField = keyof SyntheticLogInput;
@@ -14,6 +20,7 @@ export interface SyntheticLogInputIssue {
     | "NOT_FINITE"
     | "NOT_INTEGER"
     | "OUT_OF_RANGE"
+    | "INCONSISTENT_INPUT"
     | "GENERATED_LOG_INVALID"
     | "SELF_CHECK_FAILED";
   message: string;
@@ -23,6 +30,12 @@ export interface SyntheticLogVerification {
   averageChaseGapSeconds: number;
   firstChaseDurationSeconds: number;
   generatorsRemainingAtFirstElimination: number;
+  completeChaseCount: number;
+  averageChaseDurationSeconds: number;
+  abandonedChaseCount: number;
+  highProgressGeneratorLosses: number;
+  keyGeneratorInterruptions: number;
+  totalEliminations: number;
 }
 
 export interface SyntheticLogSuccess {
@@ -45,6 +58,14 @@ export const SYNTHETIC_LOG_LIMITS = {
   minimumFirstChaseSeconds: 1,
   minimumGeneratorsRemaining: 0,
   maximumGeneratorsRemaining: 5,
+  minimumCompleteChases: 1,
+  maximumCompleteChases: 12,
+  minimumAverageChaseSeconds: 1,
+  minimumAbandonedChases: 0,
+  maximumHighProgressGeneratorLosses: 5,
+  maximumKeyGeneratorInterruptions: 20,
+  minimumEliminations: 1,
+  maximumEliminations: 4,
 } as const;
 
 export const DEFAULT_SYNTHETIC_LOG_INPUT: Readonly<SyntheticLogInput> = {

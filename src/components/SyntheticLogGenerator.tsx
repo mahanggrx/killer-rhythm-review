@@ -25,11 +25,39 @@ function toFormValues(
     generatorsRemainingAtFirstElimination: String(
       input.generatorsRemainingAtFirstElimination,
     ),
+    completeChaseCount: input.completeChaseCount === undefined
+      ? ""
+      : String(input.completeChaseCount),
+    averageChaseDurationSeconds:
+      input.averageChaseDurationSeconds === undefined
+        ? ""
+        : String(input.averageChaseDurationSeconds),
+    abandonedChaseCount: input.abandonedChaseCount === undefined
+      ? ""
+      : String(input.abandonedChaseCount),
+    highProgressGeneratorLosses:
+      input.highProgressGeneratorLosses === undefined
+        ? ""
+        : String(input.highProgressGeneratorLosses),
+    keyGeneratorInterruptions: input.keyGeneratorInterruptions === undefined
+      ? ""
+      : String(input.keyGeneratorInterruptions),
+    totalEliminations: input.totalEliminations === undefined
+      ? ""
+      : String(input.totalEliminations),
   };
 }
 
 function parseFormNumber(value: string): number {
   return value.trim() === "" ? Number.NaN : Number(value);
+}
+
+function parseOptionalFormNumber(value: string): number | undefined {
+  return value.trim() === "" ? undefined : Number(value);
+}
+
+function formatVerificationValue(value: number): string {
+  return Number.isInteger(value) ? String(value) : value.toFixed(2);
 }
 
 export function SyntheticLogGenerator({
@@ -57,6 +85,18 @@ export function SyntheticLogGenerator({
       generatorsRemainingAtFirstElimination: parseFormNumber(
         values.generatorsRemainingAtFirstElimination,
       ),
+      completeChaseCount: parseOptionalFormNumber(values.completeChaseCount),
+      averageChaseDurationSeconds: parseOptionalFormNumber(
+        values.averageChaseDurationSeconds,
+      ),
+      abandonedChaseCount: parseOptionalFormNumber(values.abandonedChaseCount),
+      highProgressGeneratorLosses: parseOptionalFormNumber(
+        values.highProgressGeneratorLosses,
+      ),
+      keyGeneratorInterruptions: parseOptionalFormNumber(
+        values.keyGeneratorInterruptions,
+      ),
+      totalEliminations: parseOptionalFormNumber(values.totalEliminations),
     });
 
     if (!result.ok) {
@@ -77,7 +117,7 @@ export function SyntheticLogGenerator({
           <p className="section-kicker">合成日志生成器</p>
           <h2 id="generator-title">按指标生成一份可分析的 JSON</h2>
           <p>
-            填写三个核心结果，系统会生成匿名事件、通过现有校验，并回算确认指标一致。
+            填写三个核心结果，需要时可展开高级设置；生成日志会通过现有校验并回算确认指标一致。
           </p>
         </div>
         <button className="button button--secondary" type="button" onClick={onClose}>
@@ -124,11 +164,101 @@ export function SyntheticLogGenerator({
           />
         </label>
 
+        <details className="generator-advanced">
+          <summary>
+            <span>高级设置</span>
+            <small>留空时自动生成确定性默认场景</small>
+          </summary>
+          <div className="generator-advanced__grid">
+            <label className="field-control">
+              <span>完整追逐次数</span>
+              <input
+                type="number"
+                min={SYNTHETIC_LOG_LIMITS.minimumCompleteChases}
+                max={SYNTHETIC_LOG_LIMITS.maximumCompleteChases}
+                step="1"
+                placeholder="自动"
+                value={values.completeChaseCount}
+                onChange={(event) => updateValue("completeChaseCount", event.target.value)}
+              />
+            </label>
+            <label className="field-control">
+              <span>平均追逐持续时间（秒）</span>
+              <input
+                type="number"
+                min={SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds}
+                max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
+                step="1"
+                placeholder="自动"
+                value={values.averageChaseDurationSeconds}
+                onChange={(event) => updateValue(
+                  "averageChaseDurationSeconds",
+                  event.target.value,
+                )}
+              />
+            </label>
+            <label className="field-control">
+              <span>目标丢失或转火次数</span>
+              <input
+                type="number"
+                min={SYNTHETIC_LOG_LIMITS.minimumAbandonedChases}
+                max={SYNTHETIC_LOG_LIMITS.maximumCompleteChases}
+                step="1"
+                placeholder="自动"
+                value={values.abandonedChaseCount}
+                onChange={(event) => updateValue("abandonedChaseCount", event.target.value)}
+              />
+            </label>
+            <label className="field-control">
+              <span>高进度发电机丢失数</span>
+              <input
+                type="number"
+                min="0"
+                max={SYNTHETIC_LOG_LIMITS.maximumHighProgressGeneratorLosses}
+                step="1"
+                placeholder="自动"
+                value={values.highProgressGeneratorLosses}
+                onChange={(event) => updateValue(
+                  "highProgressGeneratorLosses",
+                  event.target.value,
+                )}
+              />
+            </label>
+            <label className="field-control">
+              <span>高进度有效干扰次数</span>
+              <input
+                type="number"
+                min="0"
+                max={SYNTHETIC_LOG_LIMITS.maximumKeyGeneratorInterruptions}
+                step="1"
+                placeholder="自动"
+                value={values.keyGeneratorInterruptions}
+                onChange={(event) => updateValue(
+                  "keyGeneratorInterruptions",
+                  event.target.value,
+                )}
+              />
+            </label>
+            <label className="field-control">
+              <span>最终永久减员数</span>
+              <input
+                type="number"
+                min={SYNTHETIC_LOG_LIMITS.minimumEliminations}
+                max={SYNTHETIC_LOG_LIMITS.maximumEliminations}
+                step="1"
+                placeholder="自动"
+                value={values.totalEliminations}
+                onChange={(event) => updateValue("totalEliminations", event.target.value)}
+              />
+            </label>
+          </div>
+        </details>
+
         <div className="generator-form__action">
           <button className="button button--primary" type="submit">
             <Icon name="pulse" />生成并分析
           </button>
-          <p>固定生成两段正式追逐和一次流血减员，仅用于规则原型测试。</p>
+          <p>高级参数可以留空；生成结果仅用于构造可验证的规则测试日志。</p>
         </div>
       </form>
 
@@ -147,6 +277,12 @@ export function SyntheticLogGenerator({
               <div><dt>平均追逐空窗</dt><dd>{generated.verification.averageChaseGapSeconds} 秒</dd></div>
               <div><dt>首次追逐</dt><dd>{generated.verification.firstChaseDurationSeconds} 秒</dd></div>
               <div><dt>首次减员剩余电机</dt><dd>{generated.verification.generatorsRemainingAtFirstElimination}</dd></div>
+              <div><dt>完整追逐</dt><dd>{generated.verification.completeChaseCount} 次</dd></div>
+              <div><dt>平均追逐时长</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} 秒</dd></div>
+              <div><dt>目标丢失或转火</dt><dd>{generated.verification.abandonedChaseCount} 次</dd></div>
+              <div><dt>高进度电机丢失</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
+              <div><dt>高进度有效干扰</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>
+              <div><dt>最终永久减员</dt><dd>{generated.verification.totalEliminations} 人</dd></div>
             </dl>
           </div>
           <label className="generated-json">
