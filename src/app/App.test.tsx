@@ -5,12 +5,12 @@ import validSample from "../data/samples/valid-base-match.json";
 import { App } from "./App";
 
 describe("App", () => {
-  it("默认展示首追过长样例及其真实分析结果", () => {
+  it("默认展示首次进入追逐较晚样例及其真实分析结果", () => {
     render(<App />);
 
     expect(screen.getByRole("heading", { name: "杀手节奏复盘反馈系统" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "首次追逐持续较长" })).toBeInTheDocument();
-    expect(screen.getByText("78 秒", { selector: ".metric-card__value" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次进入追逐较晚" })).toBeInTheDocument();
+    expect(screen.getByText("50 秒", { selector: ".metric-card__value" })).toBeInTheDocument();
     expect(screen.getByText("原型待验证数值")).toBeInTheDocument();
     expect(screen.queryByLabelText("分析阶段")).not.toBeInTheDocument();
   });
@@ -22,19 +22,19 @@ describe("App", () => {
       target: { value: "late-first-elimination" },
     });
 
-    expect(screen.getByRole("heading", { name: "首次永久减员形成较晚" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次减员形成较晚" })).toBeInTheDocument();
     expect(screen.getByText("1", { selector: ".metric-card__value" })).toBeInTheDocument();
   });
 
   it("修改阈值后立即使用统一分析入口更新为无明确断点，并可恢复默认", () => {
     render(<App />);
-    const threshold = screen.getByLabelText("首次追逐时长阈值");
+    const threshold = screen.getByLabelText("首次进入追逐时间阈值");
 
     fireEvent.change(threshold, { target: { value: "100" } });
     expect(screen.getByRole("heading", { name: "未发现明确主要断点" })).toBeInTheDocument();
 
     fireEvent.click(screen.getByRole("button", { name: /恢复默认值/ }));
-    expect(screen.getByRole("heading", { name: "首次追逐持续较长" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "首次进入追逐较晚" })).toBeInTheDocument();
   });
 
   it("上传非法 JSON 时安全显示解析错误", async () => {
@@ -63,7 +63,7 @@ describe("App", () => {
     expect(dropzone).toHaveClass("json-dropzone--active");
     fireEvent.drop(dropzone, { dataTransfer });
 
-    expect(await screen.findByRole("heading", { name: "首次永久减员形成较晚" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "首次减员形成较晚" })).toBeInTheDocument();
     expect(screen.getByText("dragged-match.json", { selector: ".source-status strong" })).toBeInTheDocument();
     expect(dropzone).not.toHaveClass("json-dropzone--active");
   });
@@ -78,7 +78,7 @@ describe("App", () => {
     });
 
     expect(await screen.findByText(/只支持 \.json 格式/)).toBeInTheDocument();
-    expect(screen.getByText("样例 01 · 首追过长", { selector: ".source-status strong" })).toBeInTheDocument();
+    expect(screen.getByText("样例 01 · 首次进入追逐较晚", { selector: ".source-status strong" })).toBeInTheDocument();
   });
 
   it("点击时间线节点展示事件详情", async () => {
@@ -87,7 +87,7 @@ describe("App", () => {
 
     fireEvent.click(chaseButtons[0]);
 
-    await waitFor(() => expect(screen.getByText("fc-002")).toBeInTheDocument());
+    await waitFor(() => expect(screen.getByText("fs-004")).toBeInTheDocument());
     expect(screen.getByText("追逐 ID")).toBeInTheDocument();
   });
 
@@ -116,10 +116,10 @@ describe("App", () => {
 
   it("文件读取失败和无效阈值不会让页面崩溃或污染分析配置", async () => {
     render(<App />);
-    const threshold = screen.getByLabelText("首次追逐时长阈值");
+    const threshold = screen.getByLabelText("首次进入追逐时间阈值");
     fireEvent.change(threshold, { target: { value: "-1" } });
-    expect(threshold).toHaveValue(75);
-    expect(screen.getByRole("heading", { name: "首次追逐持续较长" })).toBeInTheDocument();
+    expect(threshold).toHaveValue(30);
+    expect(screen.getByRole("heading", { name: "首次进入追逐较晚" })).toBeInTheDocument();
 
     const file = new File([""], "unreadable.json", { type: "application/json" });
     Object.defineProperty(file, "text", {
@@ -145,7 +145,7 @@ describe("App", () => {
       target: { files: [file] },
     });
 
-    expect(await screen.findByRole("heading", { name: "首次永久减员形成较晚" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "首次减员形成较晚" })).toBeInTheDocument();
     fireEvent.change(screen.getByLabelText("首次减员剩余发电机阈值"), {
       target: { value: "0" },
     });
@@ -156,11 +156,11 @@ describe("App", () => {
     render(<App />);
 
     fireEvent.click(screen.getByRole("button", { name: /按指标生成日志/ }));
-    fireEvent.change(screen.getByLabelText("平均追逐空窗（秒）"), {
-      target: { value: "50" },
-    });
-    fireEvent.change(screen.getByLabelText("首次追逐持续时间（秒）"), {
+    fireEvent.change(screen.getByLabelText("首次进入追逐时间（秒）"), {
       target: { value: "20" },
+    });
+    fireEvent.change(screen.getByLabelText("完整追逐平均时长（秒）"), {
+      target: { value: "60" },
     });
     fireEvent.change(screen.getByLabelText("首次减员时剩余发电机"), {
       target: { value: "3" },
@@ -169,9 +169,9 @@ describe("App", () => {
 
     expect(screen.getByText("已通过日志校验与指标回算")).toBeInTheDocument();
     expect(screen.getByText("自定义合成日志", { selector: ".source-status strong" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "有效接敌空窗较长" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "平均追击时间较长" })).toBeInTheDocument();
     expect((screen.getByLabelText("生成的 JSON") as HTMLTextAreaElement).value)
-      .toContain('"matchId": "synthetic-50-20-3-c2-d20_20-a1-l2-i0-e1"');
+      .toContain('"matchId": "synthetic-f20-avg60-3-c2-d60_60-a1-l2-i0-e1"');
   });
 
   it("填写高级设置后生成并展示全部回算结果", () => {
@@ -187,7 +187,7 @@ describe("App", () => {
     fireEvent.change(screen.getByLabelText("完整追逐次数"), {
       target: { value: "4" },
     });
-    fireEvent.change(screen.getByLabelText("平均追逐持续时间（秒）"), {
+    fireEvent.change(screen.getByLabelText("首次追逐持续时间（秒）"), {
       target: { value: "40" },
     });
     fireEvent.change(screen.getByLabelText("目标丢失或转火次数"), {
@@ -210,7 +210,8 @@ describe("App", () => {
     }).parentElement;
 
     expect(verificationLabel("完整追逐")).toHaveTextContent("4 次");
-    expect(verificationLabel("平均追逐时长")).toHaveTextContent("40 秒");
+    expect(verificationLabel("平均追逐时长")).toHaveTextContent("30 秒");
+    expect(verificationLabel("首次追逐时长")).toHaveTextContent("40 秒");
     expect(verificationLabel("目标丢失或转火")).toHaveTextContent("2 次");
     expect(verificationLabel("高进度电机 ≥ 70% 后未被控机即修开")).toHaveTextContent("1 台");
     expect(verificationLabel("对进度 ≥ 70% 的高进度电机控机")).toHaveTextContent("3 次");

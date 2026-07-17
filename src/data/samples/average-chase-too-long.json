@@ -1,0 +1,28 @@
+{
+  "schemaVersion": "1.0",
+  "ruleset": "base_only_1v4_10.0.2",
+  "patch": "10.0.2",
+  "matchId": "portfolio-average-chase-long",
+  "durationMs": 360000,
+  "survivors": ["survivor-1", "survivor-2", "survivor-3", "survivor-4"],
+  "generators": ["generator-1", "generator-2", "generator-3", "generator-4", "generator-5", "generator-6", "generator-7"],
+  "unsupportedMechanics": [],
+  "events": [
+    { "eventId": "ac-001", "timestampMs": 0, "eventOrder": 0, "type": "trial_start" },
+    { "eventId": "ac-002", "timestampMs": 20000, "eventOrder": 1, "type": "chase_start", "chaseId": "chase-1", "survivorId": "survivor-1", "source": "game_state" },
+    { "eventId": "ac-003", "timestampMs": 75000, "eventOrder": 2, "type": "survivor_downed", "survivorId": "survivor-1", "fromState": "injured", "cause": "basic_attack", "attribution": "killer", "sourceId": "killer" },
+    { "eventId": "ac-004", "timestampMs": 75000, "eventOrder": 3, "type": "chase_end", "chaseId": "chase-1", "survivorId": "survivor-1", "endReason": "target_downed", "censored": false, "policyGenerated": false },
+    { "eventId": "ac-005", "timestampMs": 90000, "eventOrder": 4, "type": "generator_repair_stopped", "generatorId": "generator-1", "survivorId": "survivor-2", "progress": 0.85, "reason": "voluntary" },
+    { "eventId": "ac-006", "timestampMs": 95000, "eventOrder": 5, "type": "generator_completed", "generatorId": "generator-1", "completionIndex": 1, "progress": 1, "contributors": ["survivor-2"] },
+    { "eventId": "ac-007", "timestampMs": 95000, "eventOrder": 6, "type": "chase_start", "chaseId": "chase-2", "survivorId": "survivor-2", "source": "game_state" },
+    { "eventId": "ac-008", "timestampMs": 150000, "eventOrder": 7, "type": "chase_end", "chaseId": "chase-2", "survivorId": "survivor-2", "endReason": "target_switch", "censored": false, "policyGenerated": false },
+    { "eventId": "ac-009", "timestampMs": 160000, "eventOrder": 8, "type": "generator_repair_stopped", "generatorId": "generator-2", "survivorId": "survivor-3", "progress": 0.8, "reason": "voluntary" },
+    { "eventId": "ac-010", "timestampMs": 170000, "eventOrder": 9, "type": "chase_start", "chaseId": "chase-3", "survivorId": "survivor-3", "source": "game_state" },
+    { "eventId": "ac-011", "timestampMs": 180000, "eventOrder": 10, "type": "generator_completed", "generatorId": "generator-2", "completionIndex": 2, "progress": 1, "contributors": ["survivor-3"] },
+    { "eventId": "ac-012", "timestampMs": 225000, "eventOrder": 11, "type": "chase_end", "chaseId": "chase-3", "survivorId": "survivor-3", "endReason": "target_switch", "censored": false, "policyGenerated": false },
+    { "eventId": "ac-013", "timestampMs": 240000, "eventOrder": 12, "type": "generator_repair_stopped", "generatorId": "generator-3", "survivorId": "survivor-4", "progress": 0.82, "reason": "voluntary" },
+    { "eventId": "ac-014", "timestampMs": 250000, "eventOrder": 13, "type": "generator_completed", "generatorId": "generator-3", "completionIndex": 3, "progress": 1, "contributors": ["survivor-4"] },
+    { "eventId": "ac-015", "timestampMs": 310000, "eventOrder": 14, "type": "survivor_outcome", "survivorId": "survivor-1", "outcomeType": "bled_out", "cause": "bleedout_timer", "attribution": "killer" },
+    { "eventId": "ac-016", "timestampMs": 360000, "eventOrder": 15, "type": "trial_end", "reason": "fixture_complete", "normalEnd": true }
+  ]
+}

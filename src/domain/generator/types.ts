@@ -1,11 +1,11 @@
 import type { MatchLog } from "../log";
 
 export interface SyntheticLogInput {
-  averageChaseGapSeconds: number;
-  firstChaseDurationSeconds: number;
+  firstChaseStartSeconds: number;
+  averageChaseDurationSeconds: number;
   generatorsRemainingAtFirstElimination: number;
   completeChaseCount?: number;
-  averageChaseDurationSeconds?: number;
+  firstChaseDurationSeconds?: number;
   abandonedChaseCount?: number;
   highProgressGeneratorLosses?: number;
   keyGeneratorInterruptions?: number;
@@ -27,11 +27,12 @@ export interface SyntheticLogInputIssue {
 }
 
 export interface SyntheticLogVerification {
-  averageChaseGapSeconds: number;
-  firstChaseDurationSeconds: number;
+  firstChaseStartSeconds: number;
+  averageChaseDurationSeconds: number;
   generatorsRemainingAtFirstElimination: number;
   completeChaseCount: number;
-  averageChaseDurationSeconds: number;
+  firstChaseDurationSeconds: number;
+  averageChaseGapSeconds: number;
   abandonedChaseCount: number;
   highProgressGeneratorLosses: number;
   keyGeneratorInterruptions: number;
@@ -55,12 +56,12 @@ export type SyntheticLogResult = SyntheticLogSuccess | SyntheticLogFailure;
 export const SYNTHETIC_LOG_LIMITS = {
   minimumSeconds: 0,
   maximumSeconds: 3600,
+  minimumAverageChaseSeconds: 1,
   minimumFirstChaseSeconds: 1,
   minimumGeneratorsRemaining: 0,
   maximumGeneratorsRemaining: 5,
   minimumCompleteChases: 1,
   maximumCompleteChases: 12,
-  minimumAverageChaseSeconds: 1,
   minimumAbandonedChases: 0,
   maximumHighProgressGeneratorLosses: 5,
   maximumKeyGeneratorInterruptions: 20,
@@ -69,7 +70,7 @@ export const SYNTHETIC_LOG_LIMITS = {
 } as const;
 
 export const DEFAULT_SYNTHETIC_LOG_INPUT: Readonly<SyntheticLogInput> = {
-  averageChaseGapSeconds: 20,
-  firstChaseDurationSeconds: 78,
+  firstChaseStartSeconds: 50,
+  averageChaseDurationSeconds: 30,
   generatorsRemainingAtFirstElimination: 2,
 };

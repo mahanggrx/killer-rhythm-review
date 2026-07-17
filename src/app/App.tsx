@@ -115,10 +115,10 @@ export function App() {
 
     setRuleConfig((current) => {
       switch (setting) {
-        case "firstChaseSeconds":
-          return { ...current, rules: { ...current.rules, FIRST_CHASE_TOO_LONG: { ...current.rules.FIRST_CHASE_TOO_LONG, thresholdMs: value * 1000 } } };
-        case "averageChaseGapSeconds":
-          return { ...current, rules: { ...current.rules, ENGAGEMENT_GAP_TOO_LONG: { ...current.rules.ENGAGEMENT_GAP_TOO_LONG, thresholdMs: value * 1000 } } };
+        case "firstChaseStartSeconds":
+          return { ...current, rules: { ...current.rules, FIRST_CHASE_START_TOO_LATE: { ...current.rules.FIRST_CHASE_START_TOO_LATE, thresholdMs: value * 1000 } } };
+        case "averageChaseDurationSeconds":
+          return { ...current, rules: { ...current.rules, AVERAGE_CHASE_TOO_LONG: { ...current.rules.AVERAGE_CHASE_TOO_LONG, thresholdMs: value * 1000 } } };
       }
     });
   };

@@ -14,6 +14,12 @@ export function calculateEngagementMetrics(
 
   if (trialStartIndex < 0) {
     return {
+      firstChaseStartTime: unavailableMetric(
+        "milliseconds",
+        "missing_trial_start",
+        "缺少对局开始事件，无法确定首次进入追逐的计时起点。",
+        "首次进入追逐时间从 trial_start 计算到第一条游戏正式 chase_start。",
+      ),
       averageChaseGap: unavailableMetric(
         "milliseconds",
         "missing_trial_start",
@@ -25,6 +31,13 @@ export function calculateEngagementMetrics(
 
   if (firstChaseIndex < 0) {
     return {
+      firstChaseStartTime: unavailableMetric(
+        "milliseconds",
+        "missing_chase_start",
+        "本局没有游戏正式追逐开始事件，无法计算首次进入追逐时间。",
+        "首次进入追逐时间从 trial_start 计算到第一条游戏正式 chase_start。",
+        [events[trialStartIndex].eventId],
+      ),
       averageChaseGap: unavailableMetric(
         "milliseconds",
         "missing_chase_start",
@@ -82,6 +95,13 @@ export function calculateEngagementMetrics(
   const averageGap = mean(gaps);
 
   return {
+    firstChaseStartTime: availableMetric(
+      openingGap,
+      "milliseconds",
+      "从对局开始 trial_start 到第一条游戏正式 chase_start 的时间；该指标表示首次建立正式追逐压力的时间，不等同于玩家主观发现目标的准确时刻。",
+      [trialStart.eventId, firstChase.eventId],
+      1,
+    ),
     averageChaseGap: averageGap === null
       ? unavailableMetric(
           "milliseconds",

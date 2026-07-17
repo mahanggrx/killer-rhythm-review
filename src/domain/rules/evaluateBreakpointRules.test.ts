@@ -43,6 +43,7 @@ function unavailable(
 function baseMetrics(): MatchMetrics {
   return {
     engagement: {
+      firstChaseStartTime: available(20_000),
       averageChaseGap: available(17_500, "milliseconds", 2),
     },
     chase: {
@@ -83,9 +84,9 @@ describe("validateRuleEngineConfig", () => {
       rules: Record<string, Record<string, unknown>>;
       priority: string[];
     };
-    config.rules.FIRST_CHASE_TOO_LONG.thresholdMs = -1;
+    config.rules.FIRST_CHASE_START_TOO_LATE.thresholdMs = -1;
     config.rules.LATE_FIRST_ELIMINATION.maximumGeneratorsRemaining = 6;
-    config.priority = ["FIRST_CHASE_TOO_LONG"];
+    config.priority = ["FIRST_CHASE_START_TOO_LATE"];
 
     const result = validateRuleEngineConfig(config);
 
@@ -104,51 +105,58 @@ describe("evaluateBreakpointRules", () => {
     expect(result.triggeredCandidates).toEqual([]);
   });
 
-  it("使用首次 chase_start 到匹配 chase_end 的时长触发首追规则", () => {
+  it("从 trial_start 到首次 chase_start 的时间触发首次进入追逐规则", () => {
     const metrics = baseMetrics();
-    metrics.chase.firstChaseDuration = available(
-      78_000,
+    metrics.engagement.firstChaseStartTime = available(
+      50_000,
       "milliseconds",
       1,
-      ["chase-start", "chase-end"],
+      ["trial-start", "chase-start"],
     );
 
     const result = evaluate(metrics);
 
-    expect(result.primaryFeedback.ruleId).toBe("FIRST_CHASE_TOO_LONG");
+    expect(result.primaryFeedback.ruleId).toBe("FIRST_CHASE_START_TOO_LATE");
     expect(result.primaryFeedback.triggeredMetricIds).toEqual([
-      "chase.firstChaseDuration",
+      "engagement.firstChaseStartTime",
     ]);
     expect(result.primaryFeedback.evidenceEventIds).toEqual([
+      "trial-start",
       "chase-start",
-      "chase-end",
     ]);
   });
 
-  it("首追恰好等于阈值时不触发", () => {
+  it("首次进入追逐时间恰好等于阈值时不触发", () => {
     const metrics = baseMetrics();
-    metrics.chase.firstChaseDuration = available(75_000);
+    metrics.engagement.firstChaseStartTime = available(30_000);
 
     expect(evaluate(metrics).primaryFeedback.ruleId).toBe(
       "no_clear_breakpoint",
     );
   });
 
-  it("平均追逐空窗过长时触发接敌空窗规则", () => {
+  it("完整追逐平均耗时过长时触发平均追击规则", () => {
     const metrics = baseMetrics();
-    metrics.engagement.averageChaseGap = available(50_000, "milliseconds", 3);
+    metrics.chase.averageChaseDuration = available(55_000, "milliseconds", 3);
 
     const result = evaluate(metrics);
 
-    expect(result.primaryFeedback.ruleId).toBe("ENGAGEMENT_GAP_TOO_LONG");
+    expect(result.primaryFeedback.ruleId).toBe("AVERAGE_CHASE_TOO_LONG");
     expect(result.primaryFeedback.triggeredMetricIds).toEqual([
-      "engagement.averageChaseGap",
+      "chase.averageChaseDuration",
     ]);
   });
 
-  it("平均追逐空窗恰好等于阈值时不触发", () => {
+  it("完整追逐平均耗时恰好等于阈值时不触发", () => {
     const metrics = baseMetrics();
-    metrics.engagement.averageChaseGap = available(30_000, "milliseconds", 2);
+    metrics.chase.averageChaseDuration = available(40_000, "milliseconds", 2);
+
+    expect(evaluate(metrics).primaryFeedback.ruleId).toBe("no_clear_breakpoint");
+  });
+
+  it("平均追逐空窗较长不再单独形成主要断点", () => {
+    const metrics = baseMetrics();
+    metrics.engagement.averageChaseGap = available(120_000, "milliseconds", 3);
 
     expect(evaluate(metrics).primaryFeedback.ruleId).toBe("no_clear_breakpoint");
   });
@@ -224,9 +232,9 @@ describe("evaluateBreakpointRules", () => {
 
   it("规则关闭后不参与候选", () => {
     const metrics = baseMetrics();
-    metrics.chase.firstChaseDuration = available(100_000);
+    metrics.engagement.firstChaseStartTime = available(60_000);
     const config = structuredClone(DEFAULT_RULE_ENGINE_CONFIG);
-    config.rules.FIRST_CHASE_TOO_LONG.enabled = false;
+    config.rules.FIRST_CHASE_START_TOO_LATE.enabled = false;
 
     expect(evaluate(metrics, config).primaryFeedback.ruleId).toBe(
       "no_clear_breakpoint",
@@ -235,8 +243,8 @@ describe("evaluateBreakpointRules", () => {
 
   it("指标不可用或样本不足时返回诊断而不触发", () => {
     const metrics = baseMetrics();
-    metrics.chase.firstChaseDuration = unavailable("missing_first_chase_end");
-    metrics.engagement.averageChaseGap = available(60_000, "milliseconds", 0);
+    metrics.engagement.firstChaseStartTime = unavailable("missing_chase_start");
+    metrics.chase.averageChaseDuration = available(60_000, "milliseconds", 1);
 
     const result = evaluate(metrics);
 
@@ -246,26 +254,26 @@ describe("evaluateBreakpointRules", () => {
 
   it("同等证据和偏离下按单一固定优先级确定唯一结果", () => {
     const metrics = baseMetrics();
-    metrics.chase.firstChaseDuration = available(150_000);
-    metrics.engagement.averageChaseGap = available(60_000);
+    metrics.engagement.firstChaseStartTime = available(90_000);
+    metrics.chase.averageChaseDuration = available(100_000, "milliseconds", 2);
     metrics.elimination.firstEliminationGeneratorsRemaining = available(0, "count");
 
-    expect(evaluate(metrics).primaryFeedback.ruleId).toBe("FIRST_CHASE_TOO_LONG");
+    expect(evaluate(metrics).primaryFeedback.ruleId).toBe("FIRST_CHASE_START_TOO_LATE");
   });
 
   it("相同输入重复计算得到完全相同的排序", () => {
     const metrics = baseMetrics();
-    metrics.chase.firstChaseDuration = available(100_000);
-    metrics.engagement.averageChaseGap = available(50_000);
+    metrics.engagement.firstChaseStartTime = available(60_000);
+    metrics.chase.averageChaseDuration = available(70_000, "milliseconds", 2);
 
     expect(evaluate(metrics)).toEqual(evaluate(metrics));
   });
 
   it("无效配置安全返回 no_clear_breakpoint", () => {
     const config = structuredClone(DEFAULT_RULE_ENGINE_CONFIG) as unknown as {
-      rules: { FIRST_CHASE_TOO_LONG: { thresholdMs: number } };
+      rules: { FIRST_CHASE_START_TOO_LATE: { thresholdMs: number } };
     };
-    config.rules.FIRST_CHASE_TOO_LONG.thresholdMs = Number.NaN;
+    config.rules.FIRST_CHASE_START_TOO_LATE.thresholdMs = Number.NaN;
 
     const result = evaluateBreakpointRules(
       baseMetrics(),

@@ -25,18 +25,18 @@ function toFormValues(
   input: Readonly<SyntheticLogInput>,
 ): GeneratorFormValues {
   return {
-    averageChaseGapSeconds: String(input.averageChaseGapSeconds),
-    firstChaseDurationSeconds: String(input.firstChaseDurationSeconds),
+    firstChaseStartSeconds: String(input.firstChaseStartSeconds),
+    averageChaseDurationSeconds: String(input.averageChaseDurationSeconds),
     generatorsRemainingAtFirstElimination: String(
       input.generatorsRemainingAtFirstElimination,
     ),
     completeChaseCount: input.completeChaseCount === undefined
       ? ""
       : String(input.completeChaseCount),
-    averageChaseDurationSeconds:
-      input.averageChaseDurationSeconds === undefined
+    firstChaseDurationSeconds:
+      input.firstChaseDurationSeconds === undefined
         ? ""
-        : String(input.averageChaseDurationSeconds),
+        : String(input.firstChaseDurationSeconds),
     abandonedChaseCount: input.abandonedChaseCount === undefined
       ? ""
       : String(input.abandonedChaseCount),
@@ -85,14 +85,16 @@ export function SyntheticLogGenerator({
     event.preventDefault();
 
     const result = generateSyntheticMatchLog({
-      averageChaseGapSeconds: parseFormNumber(values.averageChaseGapSeconds),
-      firstChaseDurationSeconds: parseFormNumber(values.firstChaseDurationSeconds),
+      firstChaseStartSeconds: parseFormNumber(values.firstChaseStartSeconds),
+      averageChaseDurationSeconds: parseFormNumber(
+        values.averageChaseDurationSeconds,
+      ),
       generatorsRemainingAtFirstElimination: parseFormNumber(
         values.generatorsRemainingAtFirstElimination,
       ),
       completeChaseCount: parseOptionalFormNumber(values.completeChaseCount),
-      averageChaseDurationSeconds: parseOptionalFormNumber(
-        values.averageChaseDurationSeconds,
+      firstChaseDurationSeconds: parseOptionalFormNumber(
+        values.firstChaseDurationSeconds,
       ),
       abandonedChaseCount: parseOptionalFormNumber(values.abandonedChaseCount),
       highProgressGeneratorLosses: parseOptionalFormNumber(
@@ -132,26 +134,27 @@ export function SyntheticLogGenerator({
 
       <form className="generator-form" onSubmit={handleSubmit}>
         <label className="field-control">
-          <span>平均追逐空窗（秒）</span>
+          <span>首次进入追逐时间（秒）</span>
           <input
-            aria-label="平均追逐空窗（秒）"
+            aria-label="首次进入追逐时间（秒）"
             type="number"
             min={SYNTHETIC_LOG_LIMITS.minimumSeconds}
             max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
             step="1"
-            value={values.averageChaseGapSeconds}
-            onChange={(event) => updateValue("averageChaseGapSeconds", event.target.value)}
+            value={values.firstChaseStartSeconds}
+            onChange={(event) => updateValue("firstChaseStartSeconds", event.target.value)}
           />
         </label>
         <label className="field-control">
-          <span>首次追逐持续时间（秒）</span>
+          <span>完整追逐平均时长（秒）</span>
           <input
+            aria-label="完整追逐平均时长（秒）"
             type="number"
-            min={SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds}
+            min={SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds}
             max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
             step="1"
-            value={values.firstChaseDurationSeconds}
-            onChange={(event) => updateValue("firstChaseDurationSeconds", event.target.value)}
+            value={values.averageChaseDurationSeconds}
+            onChange={(event) => updateValue("averageChaseDurationSeconds", event.target.value)}
           />
         </label>
         <label className="field-control">
@@ -192,22 +195,22 @@ export function SyntheticLogGenerator({
               </small>
             </label>
             <label className="field-control">
-              <span>完整追逐平均时长（秒）</span>
+              <span>首次追逐持续时间（秒）</span>
               <input
-                aria-label="平均追逐持续时间（秒）"
+                aria-label="首次追逐持续时间（秒）"
                 type="number"
-                min={SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds}
+                min={SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds}
                 max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
                 step="1"
                 placeholder="自动"
-                value={values.averageChaseDurationSeconds}
+                value={values.firstChaseDurationSeconds}
                 onChange={(event) => updateValue(
-                  "averageChaseDurationSeconds",
+                  "firstChaseDurationSeconds",
                   event.target.value,
                 )}
               />
               <small className="field-control__help">
-                从追逐生效到同一次追逐结束，不包含之后的搬运或挂钩。
+                可选。用于让首段追逐与平均值不同；留空时各段追逐使用同一平均时长。
               </small>
             </label>
             <label className="field-control">
@@ -303,11 +306,12 @@ export function SyntheticLogGenerator({
           <div className="generator-verification">
             <p><Icon name="check" />已通过日志校验与指标回算</p>
             <dl>
-              <div><dt>平均追逐空窗</dt><dd>{generated.verification.averageChaseGapSeconds} 秒</dd></div>
-              <div><dt>首次追逐</dt><dd>{generated.verification.firstChaseDurationSeconds} 秒</dd></div>
+              <div><dt>首次进入追逐</dt><dd>{generated.verification.firstChaseStartSeconds} 秒</dd></div>
+              <div><dt>平均追逐时长</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} 秒</dd></div>
               <div><dt>首次减员剩余电机</dt><dd>{generated.verification.generatorsRemainingAtFirstElimination}</dd></div>
               <div><dt>完整追逐</dt><dd>{generated.verification.completeChaseCount} 次</dd></div>
-              <div><dt>平均追逐时长</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} 秒</dd></div>
+              <div><dt>首次追逐时长</dt><dd>{generated.verification.firstChaseDurationSeconds} 秒</dd></div>
+              <div><dt>平均追逐空窗</dt><dd>{formatVerificationValue(generated.verification.averageChaseGapSeconds)} 秒</dd></div>
               <div><dt>目标丢失或转火</dt><dd>{generated.verification.abandonedChaseCount} 次</dd></div>
               <div><dt>高进度电机 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 后未被控机即修开</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
               <div><dt>对进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机控机</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>

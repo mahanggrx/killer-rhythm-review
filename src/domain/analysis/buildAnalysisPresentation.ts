@@ -86,16 +86,17 @@ function createMetricDefinitions(
   metricConfig: Readonly<MetricConfig>,
   ruleConfig: Readonly<RuleEngineConfig>,
 ): MetricDefinition[] {
-  const firstChaseThreshold = ruleConfig.rules.FIRST_CHASE_TOO_LONG.thresholdMs;
-  const engagementRule = ruleConfig.rules.ENGAGEMENT_GAP_TOO_LONG;
+  const firstChaseStartRule = ruleConfig.rules.FIRST_CHASE_START_TOO_LATE;
+  const averageChaseRule = ruleConfig.rules.AVERAGE_CHASE_TOO_LONG;
   const eliminationRule = ruleConfig.rules.LATE_FIRST_ELIMINATION;
   const highProgressLabel = percent(metricConfig.highProgressThreshold);
 
   return [
-    { id: "engagement.averageChaseGap", group: "engagement", label: "平均追逐空窗", metric: metrics.engagement.averageChaseGap, referenceText: `参考：> ${seconds(engagementRule.thresholdMs)}` },
-    { id: "chase.firstChaseDuration", group: "chase", label: "首次追逐时长", metric: metrics.chase.firstChaseDuration, referenceText: `参考：> ${seconds(firstChaseThreshold)}` },
+    { id: "engagement.firstChaseStartTime", group: "engagement", label: "首次进入追逐时间", metric: metrics.engagement.firstChaseStartTime, referenceText: `参考：> ${seconds(firstChaseStartRule.thresholdMs)}` },
+    { id: "engagement.averageChaseGap", group: "engagement", label: "平均追逐空窗", metric: metrics.engagement.averageChaseGap, referenceText: "未设置诊断阈值" },
+    { id: "chase.firstChaseDuration", group: "chase", label: "首次追逐时长", metric: metrics.chase.firstChaseDuration, referenceText: "未设置诊断阈值" },
     { id: "chase.firstChaseToFirstDown", group: "chase", label: "首追至首次倒地", metric: metrics.chase.firstChaseToFirstDown, referenceText: "未设置诊断阈值" },
-    { id: "chase.averageChaseDuration", group: "chase", label: "完整追逐平均时长", metric: metrics.chase.averageChaseDuration, referenceText: "未设置诊断阈值" },
+    { id: "chase.averageChaseDuration", group: "chase", label: "完整追逐平均时长", metric: metrics.chase.averageChaseDuration, referenceText: `参考：> ${seconds(averageChaseRule.thresholdMs)}` },
     { id: "chase.abandonedChaseCount", group: "chase", label: "放弃或转火追逐", metric: metrics.chase.abandonedChaseCount, referenceText: "未设置诊断阈值" },
     { id: "generatorControl.highProgressGeneratorLosses", group: "generatorControl", label: `高进度电机达到 ${highProgressLabel} 后未被控机即修开`, metric: metrics.generatorControl.highProgressGeneratorLosses, referenceText: "控机指即时掉进度、开始回退或封锁；同一台最多计 1 台" },
     { id: "generatorControl.keyGeneratorInterruptions", group: "generatorControl", label: `对进度 ≥ ${highProgressLabel} 的高进度电机控机`, metric: metrics.generatorControl.keyGeneratorInterruptions, referenceText: "同一次杀手行为的多个控机效果合并为 1 次" },
@@ -114,7 +115,7 @@ export function buildAnalysisPresentation(
   const metricMap = new Map(allMetrics.map((metric) => [metric.id, metric]));
   const feedback = rules.primaryFeedback;
   const preferredMetricIds: DisplayMetricId[] = feedback.ruleId === "no_clear_breakpoint"
-    ? ["chase.firstChaseDuration", "engagement.averageChaseGap", "elimination.firstEliminationGeneratorsRemaining"]
+    ? ["engagement.firstChaseStartTime", "chase.averageChaseDuration", "elimination.firstEliminationGeneratorsRemaining"]
     : feedback.triggeredMetricIds;
   const maxDisplayedMetrics = Number.isInteger(ruleConfig.maxDisplayedMetrics)
     ? Math.min(3, Math.max(1, ruleConfig.maxDisplayedMetrics))
