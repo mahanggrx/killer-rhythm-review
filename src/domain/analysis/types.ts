@@ -6,6 +6,7 @@ import type { TimelineItem } from "../timeline";
 export type MetricGroupId = "engagement" | "chase" | "generatorControl" | "elimination";
 
 export type DisplayMetricId =
+  | "engagement.firstChaseStartTime"
   | "engagement.averageChaseGap"
   | "chase.firstChaseDuration"
   | "chase.firstChaseToFirstDown"

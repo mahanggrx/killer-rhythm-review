@@ -192,9 +192,9 @@ export function validateRuleEngineConfig(
   if (!isRecord(input.rules)) {
     errors.push("rules 必须是对象。");
   } else {
-    const firstChaseRule = validateRuleRecord(
+    const firstChaseStartRule = validateRuleRecord(
       input.rules,
-      "FIRST_CHASE_TOO_LONG",
+      "FIRST_CHASE_START_TOO_LATE",
       errors,
     );
     const eliminationRule = validateRuleRecord(
@@ -202,34 +202,34 @@ export function validateRuleEngineConfig(
       "LATE_FIRST_ELIMINATION",
       errors,
     );
-    const engagementRule = validateRuleRecord(
+    const averageChaseRule = validateRuleRecord(
       input.rules,
-      "ENGAGEMENT_GAP_TOO_LONG",
+      "AVERAGE_CHASE_TOO_LONG",
       errors,
     );
 
-    if (firstChaseRule) {
+    if (firstChaseStartRule) {
       requirePositiveNumber(
-        firstChaseRule.thresholdMs,
-        "rules.FIRST_CHASE_TOO_LONG.thresholdMs",
+        firstChaseStartRule.thresholdMs,
+        "rules.FIRST_CHASE_START_TOO_LATE.thresholdMs",
         errors,
       );
       requirePositiveInteger(
-        firstChaseRule.minimumSampleSize,
-        "rules.FIRST_CHASE_TOO_LONG.minimumSampleSize",
+        firstChaseStartRule.minimumSampleSize,
+        "rules.FIRST_CHASE_START_TOO_LATE.minimumSampleSize",
         errors,
       );
     }
 
-    if (engagementRule) {
+    if (averageChaseRule) {
       requirePositiveNumber(
-        engagementRule.thresholdMs,
-        "rules.ENGAGEMENT_GAP_TOO_LONG.thresholdMs",
+        averageChaseRule.thresholdMs,
+        "rules.AVERAGE_CHASE_TOO_LONG.thresholdMs",
         errors,
       );
       requirePositiveInteger(
-        engagementRule.minimumSampleSize,
-        "rules.ENGAGEMENT_GAP_TOO_LONG.minimumSampleSize",
+        averageChaseRule.minimumSampleSize,
+        "rules.AVERAGE_CHASE_TOO_LONG.minimumSampleSize",
         errors,
       );
     }

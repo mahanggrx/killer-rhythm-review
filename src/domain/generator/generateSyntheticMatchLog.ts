@@ -19,7 +19,7 @@ import {
 const MILLISECONDS_PER_SECOND = 1000;
 const BLEED_OUT_DURATION_MS = 240_000;
 const DEFAULT_COMPLETE_CHASE_COUNT = 2;
-const DEFAULT_SUBSEQUENT_CHASE_DURATION_SECONDS = 20;
+const DEFAULT_SUBSEQUENT_CHASE_GAP_SECONDS = 20;
 const DEFAULT_ABANDONED_CHASE_COUNT = 1;
 const HIGH_GENERATOR_PROGRESS = 0.9;
 const LOW_GENERATOR_PROGRESS = 0.5;
@@ -48,8 +48,8 @@ interface NumericFieldRule {
 }
 
 interface ResolvedSyntheticLogInput {
-  averageChaseGapSeconds: number;
-  firstChaseDurationSeconds: number;
+  firstChaseStartSeconds: number;
+  averageChaseDurationSeconds: number;
   generatorsRemainingAtFirstElimination: number;
   completeChaseCount: number;
   chaseDurationsSeconds: number[];
@@ -61,16 +61,16 @@ interface ResolvedSyntheticLogInput {
 
 const NUMERIC_FIELD_RULES: readonly NumericFieldRule[] = [
   {
-    field: "averageChaseGapSeconds",
-    label: "平均追逐空窗",
+    field: "firstChaseStartSeconds",
+    label: "首次进入追逐时间",
     minimum: SYNTHETIC_LOG_LIMITS.minimumSeconds,
     maximum: SYNTHETIC_LOG_LIMITS.maximumSeconds,
     required: true,
   },
   {
-    field: "firstChaseDurationSeconds",
-    label: "首次追逐持续时间",
-    minimum: SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds,
+    field: "averageChaseDurationSeconds",
+    label: "完整追逐平均时长",
+    minimum: SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds,
     maximum: SYNTHETIC_LOG_LIMITS.maximumSeconds,
     required: true,
   },
@@ -89,9 +89,9 @@ const NUMERIC_FIELD_RULES: readonly NumericFieldRule[] = [
     required: false,
   },
   {
-    field: "averageChaseDurationSeconds",
-    label: "平均追逐持续时间",
-    minimum: SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds,
+    field: "firstChaseDurationSeconds",
+    label: "首次追逐持续时间",
+    minimum: SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds,
     maximum: SYNTHETIC_LOG_LIMITS.maximumSeconds,
     required: false,
   },
@@ -205,13 +205,13 @@ export function validateSyntheticLogInput(
   if (
     completeChaseCountIsValid
     && validIntegerInRange(
-      input.firstChaseDurationSeconds,
-      SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds,
+      input.averageChaseDurationSeconds,
+      SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds,
       SYNTHETIC_LOG_LIMITS.maximumSeconds,
     )
     && validIntegerInRange(
-      input.averageChaseDurationSeconds,
-      SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds,
+      input.firstChaseDurationSeconds,
+      SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds,
       SYNTHETIC_LOG_LIMITS.maximumSeconds,
     )
   ) {
@@ -229,7 +229,7 @@ export function validateSyntheticLogInput(
       || remainingDuration > maximumRemainingDuration
     ) {
       issues.push({
-        field: "averageChaseDurationSeconds",
+        field: "firstChaseDurationSeconds",
         code: "INCONSISTENT_INPUT",
         message: completeChaseCount === 1
           ? "只有一次完整追逐时，平均追逐持续时间必须等于首次追逐持续时间。"
@@ -245,14 +245,11 @@ function resolveChaseDurations(
   input: Readonly<SyntheticLogInput>,
   completeChaseCount: number,
 ): number[] {
-  if (input.averageChaseDurationSeconds === undefined) {
-    return [
-      input.firstChaseDurationSeconds,
-      ...Array.from(
-        { length: completeChaseCount - 1 },
-        () => DEFAULT_SUBSEQUENT_CHASE_DURATION_SECONDS,
-      ),
-    ];
+  if (input.firstChaseDurationSeconds === undefined) {
+    return Array.from(
+      { length: completeChaseCount },
+      () => input.averageChaseDurationSeconds,
+    );
   }
 
   const remainingChaseCount = completeChaseCount - 1;
@@ -286,8 +283,8 @@ function resolveInput(
     - input.generatorsRemainingAtFirstElimination;
 
   return {
-    averageChaseGapSeconds: input.averageChaseGapSeconds,
-    firstChaseDurationSeconds: input.firstChaseDurationSeconds,
+    firstChaseStartSeconds: input.firstChaseStartSeconds,
+    averageChaseDurationSeconds: input.averageChaseDurationSeconds,
     generatorsRemainingAtFirstElimination:
       input.generatorsRemainingAtFirstElimination,
     completeChaseCount,
@@ -307,7 +304,10 @@ function availableValue(metric: NumericMetric): number | null {
 
 function buildLog(input: Readonly<ResolvedSyntheticLogInput>): MatchLog {
   const events: MatchEvent[] = [];
-  const averageGapMs = input.averageChaseGapSeconds * MILLISECONDS_PER_SECOND;
+  const firstChaseStartMs = input.firstChaseStartSeconds
+    * MILLISECONDS_PER_SECOND;
+  const subsequentChaseGapMs = DEFAULT_SUBSEQUENT_CHASE_GAP_SECONDS
+    * MILLISECONDS_PER_SECOND;
   let eventOrder = 0;
 
   const nextBase = <TType extends MatchEventType>(
@@ -327,7 +327,7 @@ function buildLog(input: Readonly<ResolvedSyntheticLogInput>): MatchLog {
 
   events.push(nextBase(0, "trial_start"));
 
-  let chaseStartMs = averageGapMs;
+  let chaseStartMs = firstChaseStartMs;
   let lastChaseEndMs = 0;
   let firstEliminationDownMs: number | null = null;
 
@@ -382,7 +382,7 @@ function buildLog(input: Readonly<ResolvedSyntheticLogInput>): MatchLog {
     });
 
     lastChaseEndMs = chaseEndMs;
-    chaseStartMs = chaseEndMs + averageGapMs;
+    chaseStartMs = chaseEndMs + subsequentChaseGapMs;
   }
 
   let cursorMs = lastChaseEndMs;
@@ -554,8 +554,8 @@ function buildLog(input: Readonly<ResolvedSyntheticLogInput>): MatchLog {
     patch: "10.0.2",
     matchId: [
       "synthetic",
-      input.averageChaseGapSeconds,
-      input.firstChaseDurationSeconds,
+      `f${input.firstChaseStartSeconds}`,
+      `avg${input.averageChaseDurationSeconds}`,
       input.generatorsRemainingAtFirstElimination,
       `c${input.completeChaseCount}`,
       `d${input.chaseDurationsSeconds.join("_")}`,
@@ -617,15 +617,18 @@ export function generateSyntheticMatchLog(
   const metrics = calculateMatchMetrics(validation.data, DEFAULT_METRIC_CONFIG);
   const averageChaseDuration = metrics.chase.averageChaseDuration;
   const verification: SyntheticLogVerification = {
-    averageChaseGapSeconds: secondsValue(metrics.engagement.averageChaseGap),
-    firstChaseDurationSeconds: secondsValue(metrics.chase.firstChaseDuration),
+    firstChaseStartSeconds: secondsValue(
+      metrics.engagement.firstChaseStartTime,
+    ),
+    averageChaseDurationSeconds: secondsValue(averageChaseDuration),
     generatorsRemainingAtFirstElimination: countValue(
       metrics.elimination.firstEliminationGeneratorsRemaining,
     ),
     completeChaseCount: averageChaseDuration.status === "available"
       ? averageChaseDuration.sampleSize
       : Number.NaN,
-    averageChaseDurationSeconds: secondsValue(averageChaseDuration),
+    firstChaseDurationSeconds: secondsValue(metrics.chase.firstChaseDuration),
+    averageChaseGapSeconds: secondsValue(metrics.engagement.averageChaseGap),
     abandonedChaseCount: countValue(metrics.chase.abandonedChaseCount),
     highProgressGeneratorLosses: countValue(
       metrics.generatorControl.highProgressGeneratorLosses,
@@ -636,8 +639,9 @@ export function generateSyntheticMatchLog(
     totalEliminations: countValue(metrics.elimination.totalEliminations),
   };
   const matchesInput = (
-    verification.averageChaseGapSeconds === input.averageChaseGapSeconds
-    && verification.firstChaseDurationSeconds === input.firstChaseDurationSeconds
+    verification.firstChaseStartSeconds === input.firstChaseStartSeconds
+    && verification.averageChaseDurationSeconds
+      === input.averageChaseDurationSeconds
     && verification.generatorsRemainingAtFirstElimination
       === input.generatorsRemainingAtFirstElimination
     && matchesOptionalInput(
@@ -645,8 +649,8 @@ export function generateSyntheticMatchLog(
       verification.completeChaseCount,
     )
     && matchesOptionalInput(
-      input.averageChaseDurationSeconds,
-      verification.averageChaseDurationSeconds,
+      input.firstChaseDurationSeconds,
+      verification.firstChaseDurationSeconds,
     )
     && matchesOptionalInput(
       input.abandonedChaseCount,

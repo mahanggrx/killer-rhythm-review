@@ -57,6 +57,7 @@ describe("calculateMatchMetrics", () => {
   it("从正式追逐状态计算接敌、首追、控机和减员指标", () => {
     const result = calculate();
 
+    expectAvailable(result.engagement.firstChaseStartTime, 12_000);
     expectAvailable(result.engagement.averageChaseGap, 21_000);
     expectAvailable(result.chase.firstChaseDuration, 48_000);
     expectAvailable(result.chase.firstChaseToFirstDown, 48_000);
@@ -116,6 +117,7 @@ describe("calculateMatchMetrics", () => {
 
     const result = calculate(minimalLog(events, 60_000));
 
+    expectAvailable(result.engagement.firstChaseStartTime, 10_000);
     expectAvailable(result.engagement.averageChaseGap, 12_500);
     expect(result.engagement.averageChaseGap.evidenceEventIds).toEqual([
       "e-1",

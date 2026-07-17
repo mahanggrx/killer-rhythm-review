@@ -28,30 +28,31 @@ describe("analyzeMatchJson", () => {
   });
 
   it("三份样例的核心指标与人工计算一致", () => {
-    const firstChase = analyze(PRESET_MATCHES[0].source);
-    const lateElimination = analyze(PRESET_MATCHES[1].source);
-    const engagementGap = analyze(PRESET_MATCHES[2].source);
+    const firstChaseStart = analyze(PRESET_MATCHES[0].source);
+    const averageChase = analyze(PRESET_MATCHES[1].source);
+    const lateElimination = analyze(PRESET_MATCHES[2].source);
 
-    expect(firstChase.status).toBe("ready");
+    expect(firstChaseStart.status).toBe("ready");
+    expect(averageChase.status).toBe("ready");
     expect(lateElimination.status).toBe("ready");
-    expect(engagementGap.status).toBe("ready");
-    if (firstChase.status !== "ready" || lateElimination.status !== "ready" || engagementGap.status !== "ready") return;
+    if (firstChaseStart.status !== "ready" || averageChase.status !== "ready" || lateElimination.status !== "ready") return;
 
-    expect(firstChase.metrics.chase.firstChaseDuration.value).toBe(78_000);
-    expect(firstChase.metrics.engagement.averageChaseGap.value).toBe(16_000);
-    expect(firstChase.metrics.elimination.firstEliminationGeneratorsRemaining.value).toBe(5);
+    expect(firstChaseStart.metrics.engagement.firstChaseStartTime.value).toBe(50_000);
+    expect(firstChaseStart.metrics.chase.averageChaseDuration.value).toBe(20_000);
+    expect(firstChaseStart.metrics.elimination.firstEliminationGeneratorsRemaining.value).toBe(2);
+
+    expect(averageChase.metrics.engagement.firstChaseStartTime.value).toBe(20_000);
+    expect(averageChase.metrics.chase.averageChaseDuration.value).toBe(55_000);
+    expect(averageChase.metrics.elimination.firstEliminationGeneratorsRemaining.value).toBe(2);
 
     expect(lateElimination.metrics.elimination.firstEliminationGeneratorsRemaining.value).toBe(1);
     expect(lateElimination.metrics.elimination.totalEliminations.value).toBe(1);
     expect(lateElimination.metrics.generatorControl.highProgressGeneratorLosses.value).toBe(4);
-
-    expect(engagementGap.metrics.engagement.averageChaseGap.value).toBe(50_000);
-    expect(engagementGap.metrics.elimination.firstEliminationGeneratorsRemaining.value).toBe(2);
   });
 
   it("阈值变化后通过同一入口实时得到 no_clear_breakpoint", () => {
     const config = structuredClone(DEFAULT_RULE_ENGINE_CONFIG);
-    config.rules.FIRST_CHASE_TOO_LONG.thresholdMs = 100_000;
+    config.rules.FIRST_CHASE_START_TOO_LATE.thresholdMs = 100_000;
 
     const result = analyze(PRESET_MATCHES[0].source, config);
 
@@ -74,8 +75,8 @@ describe("analyzeMatchJson", () => {
     expect(result.status).toBe("ready");
     if (result.status !== "ready") return;
     expect(result.timeline.filter((item) => item.isEvidence).map((item) => item.eventId)).toEqual([
-      "fc-002",
-      "fc-004",
+      "fs-001",
+      "fs-004",
     ]);
   });
 });

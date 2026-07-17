@@ -58,6 +58,7 @@ export interface MetricDiagnostic {
 }
 
 export interface EngagementMetrics {
+  firstChaseStartTime: NumericMetric;
   averageChaseGap: NumericMetric;
 }
 

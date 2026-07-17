@@ -9,11 +9,11 @@ import {
 describe("generateSyntheticMatchLog", () => {
   it("生成可通过现有校验并精确回算核心与高级指标的日志", () => {
     const result = generateSyntheticMatchLog({
-      averageChaseGapSeconds: 50,
+      firstChaseStartSeconds: 50,
+      averageChaseDurationSeconds: 30,
       firstChaseDurationSeconds: 35,
       generatorsRemainingAtFirstElimination: 1,
       completeChaseCount: 4,
-      averageChaseDurationSeconds: 30,
       abandonedChaseCount: 2,
       highProgressGeneratorLosses: 3,
       keyGeneratorInterruptions: 2,
@@ -25,11 +25,12 @@ describe("generateSyntheticMatchLog", () => {
 
     expect(parseMatchLogJson(result.source).ok).toBe(true);
     expect(result.verification).toEqual({
-      averageChaseGapSeconds: 50,
-      firstChaseDurationSeconds: 35,
+      firstChaseStartSeconds: 50,
+      averageChaseDurationSeconds: 30,
       generatorsRemainingAtFirstElimination: 1,
       completeChaseCount: 4,
-      averageChaseDurationSeconds: 30,
+      firstChaseDurationSeconds: 35,
+      averageChaseGapSeconds: 27.5,
       abandonedChaseCount: 2,
       highProgressGeneratorLosses: 3,
       keyGeneratorInterruptions: 2,
@@ -57,11 +58,12 @@ describe("generateSyntheticMatchLog", () => {
 
     expect(first.source).toBe(second.source);
     expect(first.verification).toEqual({
-      averageChaseGapSeconds: 20,
-      firstChaseDurationSeconds: 78,
+      firstChaseStartSeconds: 50,
+      averageChaseDurationSeconds: 30,
       generatorsRemainingAtFirstElimination: 2,
       completeChaseCount: 2,
-      averageChaseDurationSeconds: 49,
+      firstChaseDurationSeconds: 30,
+      averageChaseGapSeconds: 35,
       abandonedChaseCount: 1,
       highProgressGeneratorLosses: 3,
       keyGeneratorInterruptions: 0,
@@ -69,15 +71,15 @@ describe("generateSyntheticMatchLog", () => {
     });
   });
 
-  it("支持零平均追逐空窗和剩余发电机边界", () => {
+  it("支持首次立即进入追逐和剩余发电机边界", () => {
     const allCompleted = generateSyntheticMatchLog({
-      averageChaseGapSeconds: 0,
-      firstChaseDurationSeconds: 1,
+      firstChaseStartSeconds: 0,
+      averageChaseDurationSeconds: 1,
       generatorsRemainingAtFirstElimination: 0,
     });
     const noneCompleted = generateSyntheticMatchLog({
-      averageChaseGapSeconds: 0,
-      firstChaseDurationSeconds: 1,
+      firstChaseStartSeconds: 0,
+      averageChaseDurationSeconds: 1,
       generatorsRemainingAtFirstElimination: 5,
     });
 
@@ -94,8 +96,8 @@ describe("generateSyntheticMatchLog", () => {
 
   it("拒绝负数、非整数和越界发电机数量", () => {
     const issues = validateSyntheticLogInput({
-      averageChaseGapSeconds: -1,
-      firstChaseDurationSeconds: 1.5,
+      firstChaseStartSeconds: -1,
+      averageChaseDurationSeconds: 1.5,
       generatorsRemainingAtFirstElimination: 6,
     });
 
@@ -108,8 +110,8 @@ describe("generateSyntheticMatchLog", () => {
 
   it("拒绝非有限数值", () => {
     const issues = validateSyntheticLogInput({
-      averageChaseGapSeconds: Number.NaN,
-      firstChaseDurationSeconds: 20,
+      firstChaseStartSeconds: Number.NaN,
+      averageChaseDurationSeconds: 20,
       generatorsRemainingAtFirstElimination: 3,
     });
 
@@ -118,8 +120,8 @@ describe("generateSyntheticMatchLog", () => {
 
   it("允许在首次减员后补足高进度丢机，并保持首次减员口径不变", () => {
     const result = generateSyntheticMatchLog({
-      averageChaseGapSeconds: 10,
-      firstChaseDurationSeconds: 30,
+      firstChaseStartSeconds: 10,
+      averageChaseDurationSeconds: 30,
       generatorsRemainingAtFirstElimination: 5,
       highProgressGeneratorLosses: 5,
       totalEliminations: 4,
@@ -135,25 +137,25 @@ describe("generateSyntheticMatchLog", () => {
 
   it("拒绝互相冲突的追逐次数、平均时长和中断次数", () => {
     const tooManyAbandoned = validateSyntheticLogInput({
-      averageChaseGapSeconds: 10,
-      firstChaseDurationSeconds: 30,
+      firstChaseStartSeconds: 10,
+      averageChaseDurationSeconds: 30,
       generatorsRemainingAtFirstElimination: 3,
       completeChaseCount: 2,
       abandonedChaseCount: 3,
     });
     const impossibleAverage = validateSyntheticLogInput({
-      averageChaseGapSeconds: 10,
+      firstChaseStartSeconds: 10,
+      averageChaseDurationSeconds: 10,
       firstChaseDurationSeconds: 100,
       generatorsRemainingAtFirstElimination: 3,
       completeChaseCount: 2,
-      averageChaseDurationSeconds: 10,
     });
     const singleChaseMismatch = validateSyntheticLogInput({
-      averageChaseGapSeconds: 10,
+      firstChaseStartSeconds: 10,
+      averageChaseDurationSeconds: 20,
       firstChaseDurationSeconds: 30,
       generatorsRemainingAtFirstElimination: 3,
       completeChaseCount: 1,
-      averageChaseDurationSeconds: 20,
     });
 
     expect(tooManyAbandoned).toContainEqual(expect.objectContaining({
@@ -161,11 +163,11 @@ describe("generateSyntheticMatchLog", () => {
       code: "INCONSISTENT_INPUT",
     }));
     expect(impossibleAverage).toContainEqual(expect.objectContaining({
-      field: "averageChaseDurationSeconds",
+      field: "firstChaseDurationSeconds",
       code: "INCONSISTENT_INPUT",
     }));
     expect(singleChaseMismatch).toContainEqual(expect.objectContaining({
-      field: "averageChaseDurationSeconds",
+      field: "firstChaseDurationSeconds",
       code: "INCONSISTENT_INPUT",
     }));
   });

@@ -143,21 +143,21 @@ function addUnavailableDiagnostic(
   });
 }
 
-function evaluateFirstChaseRule(
+function evaluateFirstChaseStartRule(
   metrics: MatchMetrics,
   config: RuleEngineConfig,
   diagnostics: RuleEngineDiagnostic[],
 ): RankedCandidate | null {
-  const rule = config.rules.FIRST_CHASE_TOO_LONG;
+  const rule = config.rules.FIRST_CHASE_START_TOO_LATE;
   if (!rule.enabled) return null;
 
-  const metric = metrics.chase.firstChaseDuration;
-  const metricId = "chase.firstChaseDuration" as const;
+  const metric = metrics.engagement.firstChaseStartTime;
+  const metricId = "engagement.firstChaseStartTime" as const;
 
   if (!isAvailable(metric) || metric.sampleSize < rule.minimumSampleSize) {
     addUnavailableDiagnostic(
       diagnostics,
-      "FIRST_CHASE_TOO_LONG",
+      "FIRST_CHASE_START_TOO_LATE",
       metricId,
       metric,
       rule.minimumSampleSize,
@@ -169,7 +169,7 @@ function evaluateFirstChaseRule(
 
   const relativeDeviation = (metric.value - rule.thresholdMs) / rule.thresholdMs;
   return createCandidate(
-    "FIRST_CHASE_TOO_LONG",
+    "FIRST_CHASE_START_TOO_LATE",
     [buildEvidence(metricId, metric, ">", rule.thresholdMs)],
     relativeDeviation,
     evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
@@ -180,21 +180,21 @@ function evaluateFirstChaseRule(
   );
 }
 
-function evaluateEngagementGapRule(
+function evaluateAverageChaseRule(
   metrics: MatchMetrics,
   config: RuleEngineConfig,
   diagnostics: RuleEngineDiagnostic[],
 ): RankedCandidate | null {
-  const rule = config.rules.ENGAGEMENT_GAP_TOO_LONG;
+  const rule = config.rules.AVERAGE_CHASE_TOO_LONG;
   if (!rule.enabled) return null;
 
-  const metric = metrics.engagement.averageChaseGap;
-  const metricId = "engagement.averageChaseGap" as const;
+  const metric = metrics.chase.averageChaseDuration;
+  const metricId = "chase.averageChaseDuration" as const;
 
   if (!isAvailable(metric) || metric.sampleSize < rule.minimumSampleSize) {
     addUnavailableDiagnostic(
       diagnostics,
-      "ENGAGEMENT_GAP_TOO_LONG",
+      "AVERAGE_CHASE_TOO_LONG",
       metricId,
       metric,
       rule.minimumSampleSize,
@@ -207,7 +207,7 @@ function evaluateEngagementGapRule(
   const relativeDeviation = (metric.value - rule.thresholdMs) / rule.thresholdMs;
 
   return createCandidate(
-    "ENGAGEMENT_GAP_TOO_LONG",
+    "AVERAGE_CHASE_TOO_LONG",
     [buildEvidence(metricId, metric, ">", rule.thresholdMs)],
     relativeDeviation,
     evidenceSufficiency(metric.sampleSize, rule.minimumSampleSize),
@@ -339,8 +339,8 @@ export function evaluateBreakpointRules(
   const config = validation.data;
   const diagnostics: RuleEngineDiagnostic[] = [];
   const candidates = [
-    evaluateFirstChaseRule(metrics, config, diagnostics),
-    evaluateEngagementGapRule(metrics, config, diagnostics),
+    evaluateFirstChaseStartRule(metrics, config, diagnostics),
+    evaluateAverageChaseRule(metrics, config, diagnostics),
     evaluateLateEliminationRule(metrics, config, diagnostics),
   ].filter((candidate): candidate is RankedCandidate => candidate !== null);
 

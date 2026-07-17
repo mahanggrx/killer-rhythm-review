@@ -1,9 +1,9 @@
 import type { MetricUnit, NumericMetric } from "../metrics";
 
 export const RULE_IDS = [
-  "FIRST_CHASE_TOO_LONG",
+  "FIRST_CHASE_START_TOO_LATE",
   "LATE_FIRST_ELIMINATION",
-  "ENGAGEMENT_GAP_TOO_LONG",
+  "AVERAGE_CHASE_TOO_LONG",
 ] as const;
 
 export type RuleId = (typeof RULE_IDS)[number];
@@ -16,8 +16,8 @@ export type BreakpointDimension =
 export type RuleSeverity = "moderate" | "high" | "critical" | "none";
 
 export type TriggeredMetricId =
-  | "chase.firstChaseDuration"
-  | "engagement.averageChaseGap"
+  | "engagement.firstChaseStartTime"
+  | "chase.averageChaseDuration"
   | "elimination.firstEliminationGeneratorsRemaining"
   | "elimination.totalEliminations";
 
@@ -108,9 +108,9 @@ export interface RuleEngineConfig {
   };
   priority: RuleId[];
   rules: {
-    FIRST_CHASE_TOO_LONG: SingleMetricRuleConfig;
+    FIRST_CHASE_START_TOO_LATE: SingleMetricRuleConfig;
     LATE_FIRST_ELIMINATION: EliminationRuleConfig;
-    ENGAGEMENT_GAP_TOO_LONG: SingleMetricRuleConfig;
+    AVERAGE_CHASE_TOO_LONG: SingleMetricRuleConfig;
   };
 }
 
