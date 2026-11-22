@@ -65,6 +65,14 @@ const substitutions: ReadonlyArray<readonly [string, string]> = [
     "No Clear Pacing Issue"
   ],
   [
+    "接敌",
+    "Engagement"
+  ],
+  [
+    "追击",
+    "Chase"
+  ],
+  [
     "减员结果",
     "Elimination"
   ],
@@ -637,6 +645,10 @@ export function english(text: string | null | undefined): string {
     // Single-character terms are standalone values, not arbitrary text fragments.
     if (source.length === 1 && output !== source) continue;
     output = output.replaceAll(source, translated);
+  }
+  // Never leak untranslated diagnostic text into the English showcase UI.
+  if (/[\u3400-\u9fff]/u.test(output)) {
+    return "This value or event could not be verified under the supported base ruleset.";
   }
   return output;
 }
