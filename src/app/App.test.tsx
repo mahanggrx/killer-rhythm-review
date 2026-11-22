@@ -213,8 +213,8 @@ describe("App", () => {
     expect(verificationLabel("Average Chase")).toHaveTextContent("30 sec");
     expect(verificationLabel("First Chase Duration")).toHaveTextContent("40 sec");
     expect(verificationLabel("Lost/Switched Chases")).toHaveTextContent("2 chases");
-    expect(verificationLabel("Generators completed at ≥ 70% without interference")).toHaveTextContent("1 generators");
-    expect(verificationLabel("Interference actions at ≥ 70%")).toHaveTextContent("3 chases");
+    expect(verificationLabel("Generators completed at ≥ 70% without interference")).toHaveTextContent("1 generator(s)");
+    expect(verificationLabel("Interference actions at ≥ 70%")).toHaveTextContent("3 action(s)");
     expect(verificationLabel("Total Eliminations")).toHaveTextContent("2 Survivors");
   });
 });
