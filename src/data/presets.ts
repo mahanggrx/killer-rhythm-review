@@ -20,22 +20,22 @@ function toSource(value: unknown): string {
 export const PRESET_MATCHES: readonly PresetMatch[] = [
   {
     id: "first-chase-start-too-late",
-    label: "样例 01 · 首次进入追逐较晚",
-    description: "对局开始 50 秒后才首次进入游戏正式追逐。",
+    label: "Sample 01 · Late First Chase",
+    description: "The first official chase begins 50 seconds after match start.",
     source: toSource(firstChaseStartTooLate),
     expectedPrimaryRuleId: "FIRST_CHASE_START_TOO_LATE",
   },
   {
     id: "average-chase-too-long",
-    label: "样例 02 · 平均追击时间较长",
-    description: "三段完整正式追逐均持续 55 秒，平均追逐时长为 55 秒。",
+    label: "Sample 02 · Long Average Chase",
+    description: "Three complete chases each last 55 seconds.",
     source: toSource(averageChaseTooLong),
     expectedPrimaryRuleId: "AVERAGE_CHASE_TOO_LONG",
   },
   {
     id: "late-first-elimination",
-    label: "样例 03 · 首次减员形成较晚",
-    description: "首次永久减员形成前已有四台发电机完成，剩余一个基础修理目标。",
+    label: "Sample 03 · Late First Elimination",
+    description: "Four generators are completed before the first elimination.",
     source: toSource(lateFirstElimination),
     expectedPrimaryRuleId: "LATE_FIRST_ELIMINATION",
   },
