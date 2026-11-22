@@ -638,10 +638,12 @@ const substitutions: ReadonlyArray<readonly [string, string]> = [
   ]
 ];
 
+const orderedSubstitutions = [...substitutions].sort((left, right) => right[0].length - left[0].length);
+
 export function english(text: string | null | undefined): string {
   if (text == null) return "";
   let output = text;
-  for (const [source, translated] of substitutions) {
+  for (const [source, translated] of orderedSubstitutions) {
     // Single-character terms are standalone values, not arbitrary text fragments.
     if (source.length === 1 && output !== source) continue;
     output = output.replaceAll(source, translated);
