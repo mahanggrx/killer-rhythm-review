@@ -215,7 +215,7 @@ export function SyntheticLogGenerator({
               </small>
             </label>
             <label className="field-control">
-              <span>以Lost/Switched Chases结束的追逐数</span>
+              <span>Lost or Switched Chase Count</span>
               <input
                 aria-label="Lost or Switched Chases"
                 type="number"
@@ -231,7 +231,7 @@ export function SyntheticLogGenerator({
               </small>
             </label>
             <label className="field-control">
-              <span>高进度电机达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，未被控机即被修开的数量（台）</span>
+              <span>Generators completed after reaching {DEFAULT_HIGH_PROGRESS_PERCENT}% without interference</span>
               <input
                 aria-label={`Generators completed at ${DEFAULT_HIGH_PROGRESS_PERCENT}% without interference`}
                 type="number"
@@ -250,7 +250,7 @@ export function SyntheticLogGenerator({
               </small>
             </label>
             <label className="field-control">
-              <span>对进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机的控机次数</span>
+              <span>Killer interference actions on generators at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}%</span>
               <input
                 aria-label={`Killer interference actions at ≥ ${DEFAULT_HIGH_PROGRESS_PERCENT}%`}
                 type="number"
