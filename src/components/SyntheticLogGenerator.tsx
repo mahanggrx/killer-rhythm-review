@@ -314,8 +314,8 @@ export function SyntheticLogGenerator({
               <div><dt>First Chase Duration</dt><dd>{generated.verification.firstChaseDurationSeconds} sec</dd></div>
               <div><dt>Average Chase Gap</dt><dd>{formatVerificationValue(generated.verification.averageChaseGapSeconds)} sec</dd></div>
               <div><dt>Lost/Switched Chases</dt><dd>{generated.verification.abandonedChaseCount} chases</dd></div>
-              <div><dt>Generators completed at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% without interference</dt><dd>{generated.verification.highProgressGeneratorLosses} generators</dd></div>
-              <div><dt>Interference actions at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}%</dt><dd>{generated.verification.keyGeneratorInterruptions} chases</dd></div>
+              <div><dt>Generators completed at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% without interference</dt><dd>{generated.verification.highProgressGeneratorLosses} generator(s)</dd></div>
+              <div><dt>Interference actions at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}%</dt><dd>{generated.verification.keyGeneratorInterruptions} action(s)</dd></div>
               <div><dt>Total Eliminations</dt><dd>{generated.verification.totalEliminations} Survivors</dd></div>
             </dl>
           </div>
