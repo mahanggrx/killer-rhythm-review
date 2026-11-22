@@ -59,7 +59,7 @@ export function RuleSettings({ metricConfig, ruleConfig, onRuleToggle, onNumeric
           <label><span>Over</span><span className="number-field"><input aria-label="First-chase threshold" type="number" min="1" value={rules.FIRST_CHASE_START_TOO_LATE.thresholdMs / 1000} onChange={numericChange("firstChaseStartSeconds")} /><em>sec</em></span></label>
         </RuleRow>
         <RuleRow id="AVERAGE_CHASE_TOO_LONG" label="Long Average Chase" enabled={rules.AVERAGE_CHASE_TOO_LONG.enabled} onToggle={(enabled) => onRuleToggle("AVERAGE_CHASE_TOO_LONG", enabled)}>
-          <label><span>平均Over</span><span className="number-field"><input aria-label="Average-chase threshold" type="number" min="1" value={rules.AVERAGE_CHASE_TOO_LONG.thresholdMs / 1000} onChange={numericChange("averageChaseDurationSeconds")} /><em>sec</em></span></label>
+          <label><span>Average over</span><span className="number-field"><input aria-label="Average-chase threshold" type="number" min="1" value={rules.AVERAGE_CHASE_TOO_LONG.thresholdMs / 1000} onChange={numericChange("averageChaseDurationSeconds")} /><em>sec</em></span></label>
         </RuleRow>
         <RuleRow id="LATE_FIRST_ELIMINATION" label="Late First Elimination" enabled={rules.LATE_FIRST_ELIMINATION.enabled} onToggle={(enabled) => onRuleToggle("LATE_FIRST_ELIMINATION", enabled)}>
           <label><span>Objectives left ≤</span><span className="number-field"><input aria-label="Remaining generators threshold" type="number" min="0" max="5" step="1" value={rules.LATE_FIRST_ELIMINATION.maximumGeneratorsRemaining} onChange={numericChange("maximumGeneratorsRemaining")} /><em>gen</em></span></label>
