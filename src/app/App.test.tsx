@@ -5,36 +5,36 @@ import validSample from "../data/samples/valid-base-match.json";
 import { App } from "./App";
 
 describe("App", () => {
-  it("默认展示首次进入追逐较晚样例及其真实分析结果", () => {
+  it("默认展示Late First Chase样例及其真实分析结果", () => {
     render(<App />);
 
-    expect(screen.getByRole("heading", { name: "杀手节奏复盘反馈系统" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "首次进入追逐较晚" })).toBeInTheDocument();
-    expect(screen.getByText("50 秒", { selector: ".metric-card__value" })).toBeInTheDocument();
-    expect(screen.getByText("原型待验证数值")).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Killer Match Review" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Late First Chase" })).toBeInTheDocument();
+    expect(screen.getByText("50 s", { selector: ".metric-card__value" })).toBeInTheDocument();
+    expect(screen.getByText("Unvalidated Prototype Thresholds")).toBeInTheDocument();
     expect(screen.queryByLabelText("分析阶段")).not.toBeInTheDocument();
   });
 
   it("选择样例后重新校验、计算并更新主要反馈", () => {
     render(<App />);
 
-    fireEvent.change(screen.getByLabelText("选择合成样例"), {
+    fireEvent.change(screen.getByLabelText("Select Sample Match"), {
       target: { value: "late-first-elimination" },
     });
 
-    expect(screen.getByRole("heading", { name: "首次减员形成较晚" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Late First Elimination" })).toBeInTheDocument();
     expect(screen.getByText("1", { selector: ".metric-card__value" })).toBeInTheDocument();
   });
 
   it("修改阈值后立即使用统一分析入口更新为无明确断点，并可恢复默认", () => {
     render(<App />);
-    const threshold = screen.getByLabelText("首次进入追逐时间阈值");
+    const threshold = screen.getByLabelText("First-chase threshold");
 
     fireEvent.change(threshold, { target: { value: "100" } });
-    expect(screen.getByRole("heading", { name: "未发现明确主要断点" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "No Clear Pacing Issue" })).toBeInTheDocument();
 
-    fireEvent.click(screen.getByRole("button", { name: /恢复默认值/ }));
-    expect(screen.getByRole("heading", { name: "首次进入追逐较晚" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Reset Defaults/ }));
+    expect(screen.getByRole("heading", { name: "Late First Chase" })).toBeInTheDocument();
   });
 
   it("上传非法 JSON 时安全显示解析错误", async () => {
@@ -42,10 +42,10 @@ describe("App", () => {
     const file = new File(["{ bad json"], "broken.json", { type: "application/json" });
     Object.defineProperty(file, "text", { value: () => Promise.resolve("{ bad json") });
 
-    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), { target: { files: [file] } });
+    fireEvent.change(screen.getByLabelText("Upload JSON file"), { target: { files: [file] } });
 
-    expect(await screen.findByRole("heading", { name: "暂时无法分析这份日志" })).toBeInTheDocument();
-    expect(screen.getByText("JSON 语法错误，无法解析日志")).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Unable to Analyze This Log" })).toBeInTheDocument();
+    expect(screen.getByText("JSON syntax error; unable to parse the match log")).toBeInTheDocument();
     expect(screen.getByText("broken.json")).toBeInTheDocument();
   });
 
@@ -56,14 +56,14 @@ describe("App", () => {
       type: "application/json",
     });
     Object.defineProperty(file, "text", { value: () => Promise.resolve(source) });
-    const dropzone = screen.getByRole("button", { name: /拖动 JSON 文件到这里/ });
+    const dropzone = screen.getByRole("button", { name: /Drop a JSON file here/ });
     const dataTransfer = { files: [file], types: ["Files"], dropEffect: "none" };
 
     fireEvent.dragEnter(dropzone, { dataTransfer });
     expect(dropzone).toHaveClass("json-dropzone--active");
     fireEvent.drop(dropzone, { dataTransfer });
 
-    expect(await screen.findByRole("heading", { name: "首次减员形成较晚" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Late First Elimination" })).toBeInTheDocument();
     expect(screen.getByText("dragged-match.json", { selector: ".source-status strong" })).toBeInTheDocument();
     expect(dropzone).not.toHaveClass("json-dropzone--active");
   });
@@ -71,24 +71,24 @@ describe("App", () => {
   it("拖入非 JSON 文件时给出明确错误且不读取文件", async () => {
     render(<App />);
     const file = new File(["not json"], "notes.txt", { type: "text/plain" });
-    const dropzone = screen.getByRole("button", { name: /拖动 JSON 文件到这里/ });
+    const dropzone = screen.getByRole("button", { name: /Drop a JSON file here/ });
 
     fireEvent.drop(dropzone, {
       dataTransfer: { files: [file], types: ["Files"], dropEffect: "none" },
     });
 
-    expect(await screen.findByText(/只支持 \.json 格式/)).toBeInTheDocument();
-    expect(screen.getByText("样例 01 · 首次进入追逐较晚", { selector: ".source-status strong" })).toBeInTheDocument();
+    expect(await screen.findByText(/Please select a \.json file/)).toBeInTheDocument();
+    expect(screen.getByText("Sample 01 · Late First Chase", { selector: ".source-status strong" })).toBeInTheDocument();
   });
 
   it("点击时间线节点展示事件详情", async () => {
     render(<App />);
-    const chaseButtons = screen.getAllByRole("button", { name: /追逐开始/ });
+    const chaseButtons = screen.getAllByRole("button", { name: /Chase Started/ });
 
     fireEvent.click(chaseButtons[0]);
 
     await waitFor(() => expect(screen.getByText("fs-004")).toBeInTheDocument());
-    expect(screen.getByText("追逐 ID")).toBeInTheDocument();
+    expect(screen.getByText("Chase ID")).toBeInTheDocument();
   });
 
   it("在折叠明细中展示日志语义警告的具体内容", async () => {
@@ -104,32 +104,32 @@ describe("App", () => {
       value: () => Promise.resolve(JSON.stringify(source)),
     });
 
-    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), {
+    fireEvent.change(screen.getByLabelText("Upload JSON file"), {
       target: { files: [file] },
     });
 
-    expect(await screen.findByText(/日志包含 1 条语义警告/)).toBeInTheDocument();
-    fireEvent.click(screen.getByText("完整分析明细"));
+    expect(await screen.findByText(/1 log warning/)).toBeInTheDocument();
+    fireEvent.click(screen.getByText("Analysis Details"));
     expect(screen.getByText(/UNSUPPORTED_MECHANICS_DECLARED/)).toBeInTheDocument();
-    expect(screen.getByText(/hook_stage_transfer|基础规则集之外的机制/)).toBeInTheDocument();
+    expect(screen.getByText(/hook_stage_transfer|outside the supported base ruleset/)).toBeInTheDocument();
   });
 
   it("文件读取失败和无效阈值不会让页面崩溃或污染分析配置", async () => {
     render(<App />);
-    const threshold = screen.getByLabelText("首次进入追逐时间阈值");
+    const threshold = screen.getByLabelText("First-chase threshold");
     fireEvent.change(threshold, { target: { value: "-1" } });
     expect(threshold).toHaveValue(30);
-    expect(screen.getByRole("heading", { name: "首次进入追逐较晚" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Late First Chase" })).toBeInTheDocument();
 
     const file = new File([""], "unreadable.json", { type: "application/json" });
     Object.defineProperty(file, "text", {
       value: () => Promise.reject(new Error("read failed")),
     });
-    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), {
+    fireEvent.change(screen.getByLabelText("Upload JSON file"), {
       target: { files: [file] },
     });
 
-    expect(await screen.findByRole("heading", { name: "暂时无法导入这份日志" })).toBeInTheDocument();
+    expect(await screen.findByRole("heading", { name: "Unable to Import This File" })).toBeInTheDocument();
     expect(screen.getByText(/unreadable.json/)).toBeInTheDocument();
   });
 
@@ -141,80 +141,80 @@ describe("App", () => {
     });
     Object.defineProperty(file, "text", { value: () => Promise.resolve(source) });
 
-    fireEvent.change(screen.getByLabelText("上传 JSON 文件"), {
+    fireEvent.change(screen.getByLabelText("Upload JSON file"), {
       target: { files: [file] },
     });
 
-    expect(await screen.findByRole("heading", { name: "首次减员形成较晚" })).toBeInTheDocument();
-    fireEvent.change(screen.getByLabelText("首次减员剩余发电机阈值"), {
+    expect(await screen.findByRole("heading", { name: "Late First Elimination" })).toBeInTheDocument();
+    fireEvent.change(screen.getByLabelText("Remaining generators threshold"), {
       target: { value: "0" },
     });
-    expect(screen.getByRole("heading", { name: "未发现明确主要断点" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "No Clear Pacing Issue" })).toBeInTheDocument();
   });
 
-  it("按指标生成日志、通过回算并立即进入现有分析流程", () => {
+  it("Build a Synthetic Log、通过回算并立即进入现有分析流程", () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /按指标生成日志/ }));
-    fireEvent.change(screen.getByLabelText("首次进入追逐时间（秒）"), {
+    fireEvent.click(screen.getByRole("button", { name: /Build a Synthetic Log/ }));
+    fireEvent.change(screen.getByLabelText("Time to First Chase (sec)"), {
       target: { value: "20" },
     });
-    fireEvent.change(screen.getByLabelText("完整追逐平均时长（秒）"), {
+    fireEvent.change(screen.getByLabelText("Average Chase Duration (sec)"), {
       target: { value: "60" },
     });
-    fireEvent.change(screen.getByLabelText("首次减员时剩余发电机"), {
+    fireEvent.change(screen.getByLabelText("Generators Left at First Elimination"), {
       target: { value: "3" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /生成并分析/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Generate & Analyze/ }));
 
-    expect(screen.getByText("已通过日志校验与指标回算")).toBeInTheDocument();
-    expect(screen.getByText("自定义合成日志", { selector: ".source-status strong" })).toBeInTheDocument();
-    expect(screen.getByRole("heading", { name: "平均追击时间较长" })).toBeInTheDocument();
-    expect((screen.getByLabelText("生成的 JSON") as HTMLTextAreaElement).value)
+    expect(screen.getByText("Log Validated & Metrics Recalculated")).toBeInTheDocument();
+    expect(screen.getByText("Custom Synthetic Log", { selector: ".source-status strong" })).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "Long Average Chase" })).toBeInTheDocument();
+    expect((screen.getByLabelText("Generated JSON") as HTMLTextAreaElement).value)
       .toContain('"matchId": "synthetic-f20-avg60-3-c2-d60_60-a1-l2-i0-e1"');
   });
 
-  it("填写高级设置后生成并展示全部回算结果", () => {
+  it("填写Advanced Settings后生成并展示全部回算结果", () => {
     render(<App />);
 
-    fireEvent.click(screen.getByRole("button", { name: /按指标生成日志/ }));
-    fireEvent.click(screen.getByText("高级设置"));
+    fireEvent.click(screen.getByRole("button", { name: /Build a Synthetic Log/ }));
+    fireEvent.click(screen.getByText("Advanced Settings"));
 
-    expect(screen.getByText(/“控机”指杀手行为实际造成发电机即时掉进度、开始回退或封锁/))
+    expect(screen.getByText(/Interference requires an actual progress loss, regression, or block/))
       .toBeInTheDocument();
-    expect(screen.getByText(/逃生者自行停修不计/)).toBeInTheDocument();
+    expect(screen.getByText(/Survivors stopping repairs does not count/)).toBeInTheDocument();
 
-    fireEvent.change(screen.getByLabelText("完整追逐次数"), {
+    fireEvent.change(screen.getByLabelText("Completed Chase Count"), {
       target: { value: "4" },
     });
-    fireEvent.change(screen.getByLabelText("首次追逐持续时间（秒）"), {
+    fireEvent.change(screen.getByLabelText("First Chase Duration (sec)"), {
       target: { value: "40" },
     });
-    fireEvent.change(screen.getByLabelText("目标丢失或转火次数"), {
+    fireEvent.change(screen.getByLabelText("Lost or Switched Chases"), {
       target: { value: "2" },
     });
-    fireEvent.change(screen.getByLabelText("高进度电机达到 70% 后未被控机即被修开的数量"), {
+    fireEvent.change(screen.getByLabelText("Generators completed at 70% without interference"), {
       target: { value: "1" },
     });
-    fireEvent.change(screen.getByLabelText("对进度达到 70% 的高进度电机的控机次数"), {
+    fireEvent.change(screen.getByLabelText("Killer interference actions at ≥ 70%"), {
       target: { value: "3" },
     });
-    fireEvent.change(screen.getByLabelText("最终永久减员数"), {
+    fireEvent.change(screen.getByLabelText("Total Eliminations"), {
       target: { value: "2" },
     });
-    fireEvent.click(screen.getByRole("button", { name: /生成并分析/ }));
+    fireEvent.click(screen.getByRole("button", { name: /Generate & Analyze/ }));
 
-    expect(screen.getByText("已通过日志校验与指标回算")).toBeInTheDocument();
+    expect(screen.getByText("Log Validated & Metrics Recalculated")).toBeInTheDocument();
     const verificationLabel = (name: string) => screen.getByText(name, {
       selector: ".generator-verification dt",
     }).parentElement;
 
-    expect(verificationLabel("完整追逐")).toHaveTextContent("4 次");
-    expect(verificationLabel("平均追逐时长")).toHaveTextContent("30 秒");
-    expect(verificationLabel("首次追逐时长")).toHaveTextContent("40 秒");
-    expect(verificationLabel("目标丢失或转火")).toHaveTextContent("2 次");
-    expect(verificationLabel("高进度电机 ≥ 70% 后未被控机即修开")).toHaveTextContent("1 台");
-    expect(verificationLabel("对进度 ≥ 70% 的高进度电机控机")).toHaveTextContent("3 次");
-    expect(verificationLabel("最终永久减员")).toHaveTextContent("2 人");
+    expect(verificationLabel("Completed Chases")).toHaveTextContent("4 chases");
+    expect(verificationLabel("Average Chase")).toHaveTextContent("30 sec");
+    expect(verificationLabel("First Chase Duration")).toHaveTextContent("40 sec");
+    expect(verificationLabel("Lost/Switched Chases")).toHaveTextContent("2 chases");
+    expect(verificationLabel("Generators completed at ≥ 70% without interference")).toHaveTextContent("1 generator(s)");
+    expect(verificationLabel("Interference actions at ≥ 70%")).toHaveTextContent("3 action(s)");
+    expect(verificationLabel("Total Eliminations")).toHaveTextContent("2 Survivors");
   });
 });

@@ -1,3 +1,4 @@
+import { english } from "../i18n/english";
 import type { TimelineItem } from "../domain/timeline";
 
 interface EventTimelineProps {
@@ -13,15 +14,15 @@ export function EventTimeline({ items, selectedEventId, onSelect }: EventTimelin
     <section className="timeline-section" id="evidence-timeline" aria-labelledby="timeline-title">
       <div className="section-heading">
         <div>
-          <p className="section-kicker">事件证据</p>
-          <h2 id="timeline-title">对局时间线</h2>
+          <p className="section-kicker">Event Evidence</p>
+          <h2 id="timeline-title">Match Timeline</h2>
         </div>
-        <p className="section-note">高亮节点参与了主要断点判断 · 点击查看详情</p>
+        <p className="section-note">Highlighted events support the main finding · Tap to inspect</p>
       </div>
       {items.length === 0 ? (
-        <p className="empty-state">当前日志没有可展示的关键时间线事件。</p>
+        <p className="empty-state">No timeline events available for this log.</p>
       ) : (
-        <div className="timeline-scroll" tabIndex={0} aria-label="可横向滚动的事件时间线">
+        <div className="timeline-scroll" tabIndex={0} aria-label="Horizontally scrollable match timeline">
           <ol className="timeline-list">
             {items.map((item) => (
               <li className="timeline-item" key={item.eventId}>
@@ -33,8 +34,8 @@ export function EventTimeline({ items, selectedEventId, onSelect }: EventTimelin
                 >
                   <span className="timeline-event__time">{item.timeLabel}</span>
                   <span className="timeline-event__node" aria-hidden="true" />
-                  <strong>{item.label}</strong>
-                  <small>{item.summary}</small>
+                  <strong>{english(item.label)}</strong>
+                  <small>{english(item.summary)}</small>
                 </button>
               </li>
             ))}
@@ -44,15 +45,15 @@ export function EventTimeline({ items, selectedEventId, onSelect }: EventTimelin
       {selectedItem && (
         <article className="event-detail" aria-live="polite">
           <div>
-            <span className={`event-detail__kind event-detail__kind--${selectedItem.kind}`}>{selectedItem.label}</span>
+            <span className={`event-detail__kind event-detail__kind--${selectedItem.kind}`}>{english(selectedItem.label)}</span>
             <strong>{selectedItem.timeLabel}</strong>
             <code>{selectedItem.eventId}</code>
           </div>
           <dl>
             {selectedItem.details.map((detail) => (
-              <div key={detail.label}>
-                <dt>{detail.label}</dt>
-                <dd>{detail.value}</dd>
+              <div key={english(detail.label)}>
+                <dt>{english(detail.label)}</dt>
+                <dd>{english(detail.value)}</dd>
               </div>
             ))}
           </dl>

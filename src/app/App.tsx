@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { english } from "../i18n/english";
 import { DetailsPanel } from "../components/DetailsPanel";
 import { EventTimeline } from "../components/EventTimeline";
 import { Icon } from "../components/Icon";
@@ -54,7 +55,7 @@ export function App() {
   const handleUpload = async (file: File | undefined) => {
     if (!file) return;
     if (!file.name.toLowerCase().endsWith(".json")) {
-      setUploadError(`文件“${file.name}”不是 JSON 文件，只支持 .json 格式。`);
+      setUploadError(`“${file.name}” is not a JSON file. Please select a .json file.`);
       return;
     }
     try {
@@ -65,13 +66,13 @@ export function App() {
       setSelectedEventId(null);
       setUploadError(null);
     } catch {
-      setUploadError(`无法读取文件“${file.name}”，请重新选择本地 JSON 文件。`);
+      setUploadError(`Could not read “${file.name}”. Please select another JSON file.`);
     }
   };
 
   const handleGeneratedSource = (generatedSource: string) => {
     setSelectedPresetId("generated");
-    setSourceName("自定义合成日志");
+    setSourceName("Custom Synthetic Log");
     setSource(generatedSource);
     setSelectedEventId(null);
     setUploadError(null);
@@ -138,28 +139,30 @@ export function App() {
   return (
     <div className="app-shell">
       <header className="topbar">
-        <a className="brand" href="#main-content" aria-label="返回分析结果顶部">
+        <a className="brand" href="#main-content" aria-label="Back to results">
           <span className="brand__mark"><Icon name="target" /></span>
-          <span><strong>杀手节奏复盘反馈系统</strong></span>
+          <span><strong>Killer Match Review</strong></span>
         </a>
         <div className="topbar__meta">
-          <span>规则集 <strong>base_only_1v4_10.0.2</strong></span>
-          <span className="status-dot">纯前端原型</span>
+          <span>Ruleset <strong>base_only_1v4_10.0.2</strong></span>
+          <span className="status-dot">Browser-Only Prototype</span>
         </div>
       </header>
 
       <main id="main-content">
         <section className="hero" aria-labelledby="page-title">
           <div className="hero__copy">
-            <h1 id="page-title">杀手节奏复盘反馈系统</h1>
+            <h1 id="page-title">Killer Match Review</h1>
+            <p className="hero__subtitle">Event-based post-match feedback for Dead by Daylight Killers.</p>
+            <a className="hero__jump" href="#feedback-result">Explore the sample analysis <span aria-hidden="true">↓</span></a>
           </div>
-          <div className="source-controls" aria-label="对局日志来源">
+          <div className="source-controls" aria-label="Match log source">
             <label className="field-control">
-              <span>选择合成样例</span>
+              <span>Select Sample Match</span>
               <select value={selectedPresetId} onChange={(event) => handlePresetChange(event.target.value)}>
                 {PRESET_MATCHES.map((preset) => <option key={preset.id} value={preset.id}>{preset.label}</option>)}
-                {selectedPresetId === "uploaded" && <option value="uploaded">已上传 · {sourceName}</option>}
-                {selectedPresetId === "generated" && <option value="generated">已生成 · {sourceName}</option>}
+                {selectedPresetId === "uploaded" && <option value="uploaded">Uploaded · {sourceName}</option>}
+                {selectedPresetId === "generated" && <option value="generated">Generated · {sourceName}</option>}
               </select>
             </label>
             <JsonDropzone onFile={(file) => void handleUpload(file)} />
@@ -170,9 +173,9 @@ export function App() {
               aria-controls="synthetic-log-generator"
               onClick={() => setIsGeneratorOpen((current) => !current)}
             >
-              <Icon name="pulse" />按指标生成日志
+              <Icon name="pulse" />Build a Synthetic Log
             </button>
-            <p className="source-status"><span>当前日志</span><strong>{sourceName}</strong></p>
+            <p className="source-status"><span>Current Log</span><strong>{sourceName}</strong></p>
           </div>
         </section>
 
@@ -191,8 +194,8 @@ export function App() {
               <section className="error-panel" role="alert" aria-labelledby="upload-error-title">
                 <Icon name="warning" />
                 <div>
-                  <p className="section-kicker">文件导入失败</p>
-                  <h2 id="upload-error-title">暂时无法导入这份日志</h2>
+                  <p className="section-kicker">Import Failed</p>
+                  <h2 id="upload-error-title">Unable to Import This File</h2>
                   <p>{uploadError}</p>
                 </div>
               </section>
@@ -200,14 +203,14 @@ export function App() {
               <section className="error-panel" role="alert" aria-labelledby="error-title">
                 <Icon name="warning" />
                 <div>
-                  <p className="section-kicker">日志校验未通过</p>
-                  <h2 id="error-title">暂时无法分析这份日志</h2>
-                  <p>请修正以下结构问题。输入错误已被安全拦截，页面和已设置的规则不会丢失。</p>
-                  <ul>{analysis.errors.map((issue, index) => <li key={`${issue.code}-${index}`}><strong>{issue.path}</strong>{issue.message}</li>)}</ul>
+                  <p className="section-kicker">Validation Failed</p>
+                  <h2 id="error-title">Unable to Analyze This Log</h2>
+                  <p>Please correct the issues below. Your settings are preserved.</p>
+                  <ul>{analysis.errors.map((issue, index) => <li key={`${issue.code}-${index}`}><strong>{issue.path}</strong>{english(issue.message)}</li>)}</ul>
                   {analysis.warnings.length > 0 && (
                     <>
-                      <p>同时检测到以下语义警告：</p>
-                      <ul>{analysis.warnings.map((issue, index) => <li key={`warning-${issue.code}-${index}`}><strong>{issue.path}</strong>{issue.message}</li>)}</ul>
+                      <p>Additional log warnings:</p>
+                      <ul>{analysis.warnings.map((issue, index) => <li key={`warning-${issue.code}-${index}`}><strong>{issue.path}</strong>{english(issue.message)}</li>)}</ul>
                     </>
                   )}
                 </div>
@@ -215,9 +218,9 @@ export function App() {
             ) : (
               <>
                 {(analysis.warnings.length > 0 || analysis.rules.diagnostics.some((item) => item.severity === "error")) && (
-                  <section className="notice-bar" aria-label="分析警告">
+                  <section className="notice-bar" aria-label="Analysis Warnings">
                     <Icon name="warning" />
-                    <span>{analysis.warnings.length > 0 ? `日志包含 ${analysis.warnings.length} 条语义警告，详情见分析明细。` : "当前阈值配置无效，规则引擎未执行判定。"}</span>
+                    <span>{analysis.warnings.length > 0 ? `${analysis.warnings.length} log warning(s). See Analysis Details.` : "Invalid rule thresholds. No pacing judgment was made."}</span>
                   </section>
                 )}
                 <PrimaryFeedbackPanel feedback={analysis.presentation.feedback} onViewEvidence={viewEvidence} />
@@ -238,8 +241,8 @@ export function App() {
       </main>
 
       <footer>
-        <p>匿名合成数据 · 确定性规则 · 无客户端连接</p>
-        <p>本原型不代表《黎明杀机》官方标准或真实平衡结论。</p>
+        <p>Synthetic Data · Deterministic Rules · No Game-Client Connection</p>
+        <p>Independent portfolio prototype. Not official DBD guidance or verified balance analysis.</p>
       </footer>
     </div>
   );

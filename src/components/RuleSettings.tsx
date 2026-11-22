@@ -28,7 +28,7 @@ function RuleRow({ id, label, enabled, children, onToggle }: RuleRowProps) {
   return (
     <div className={`rule-row${enabled ? "" : " rule-row--disabled"}`}>
       <label className="switch-control">
-        <input type="checkbox" checked={enabled} onChange={(event) => onToggle(event.target.checked)} aria-label={`启用${label}`} />
+        <input type="checkbox" checked={enabled} onChange={(event) => onToggle(event.target.checked)} aria-label={`Enable ${label}`} />
         <span aria-hidden="true" />
       </label>
       <div className="rule-row__copy"><strong>{label}</strong><code>{id}</code></div>
@@ -46,26 +46,26 @@ export function RuleSettings({ metricConfig, ruleConfig, onRuleToggle, onNumeric
   return (
     <aside className="settings-panel" aria-labelledby="settings-title">
       <div className="settings-panel__heading">
-        <div><p className="section-kicker">规则实验台</p><h2 id="settings-title">调整判定口径</h2></div>
-        <button className="icon-button" type="button" onClick={onReset}><Icon name="reset" /><span>恢复默认值</span></button>
+        <div><p className="section-kicker">Rule Lab</p><h2 id="settings-title">Adjust Thresholds</h2></div>
+        <button className="icon-button" type="button" onClick={onReset}><Icon name="reset" /><span>Reset Defaults</span></button>
       </div>
-      <p className="settings-intro">修改后立即用同一份日志重新计算。以下数值仅用于作品集原型。</p>
+      <p className="settings-intro">Settings update the same analysis instantly. Values are for demonstration only.</p>
       <label className="field-control field-control--inline">
-        <span>高进度发电机阈值</span>
-        <span className="number-field"><input aria-label="高进度发电机阈值" type="number" min="0" max="100" step="1" value={metricConfig.highProgressThreshold * 100} onChange={numericChange("highProgressPercent")} /><em>%</em></span>
+        <span>High-progress Threshold</span>
+        <span className="number-field"><input aria-label="High-progress Threshold" type="number" min="0" max="100" step="1" value={metricConfig.highProgressThreshold * 100} onChange={numericChange("highProgressPercent")} /><em>%</em></span>
       </label>
       <div className="rule-list">
-        <RuleRow id="FIRST_CHASE_START_TOO_LATE" label="首次进入追逐较晚" enabled={rules.FIRST_CHASE_START_TOO_LATE.enabled} onToggle={(enabled) => onRuleToggle("FIRST_CHASE_START_TOO_LATE", enabled)}>
-          <label><span>超过</span><span className="number-field"><input aria-label="首次进入追逐时间阈值" type="number" min="1" value={rules.FIRST_CHASE_START_TOO_LATE.thresholdMs / 1000} onChange={numericChange("firstChaseStartSeconds")} /><em>秒</em></span></label>
+        <RuleRow id="FIRST_CHASE_START_TOO_LATE" label="Late First Chase" enabled={rules.FIRST_CHASE_START_TOO_LATE.enabled} onToggle={(enabled) => onRuleToggle("FIRST_CHASE_START_TOO_LATE", enabled)}>
+          <label><span>Over</span><span className="number-field"><input aria-label="First-chase threshold" type="number" min="1" value={rules.FIRST_CHASE_START_TOO_LATE.thresholdMs / 1000} onChange={numericChange("firstChaseStartSeconds")} /><em>sec</em></span></label>
         </RuleRow>
-        <RuleRow id="AVERAGE_CHASE_TOO_LONG" label="平均追击时间较长" enabled={rules.AVERAGE_CHASE_TOO_LONG.enabled} onToggle={(enabled) => onRuleToggle("AVERAGE_CHASE_TOO_LONG", enabled)}>
-          <label><span>平均超过</span><span className="number-field"><input aria-label="完整追逐平均时长阈值" type="number" min="1" value={rules.AVERAGE_CHASE_TOO_LONG.thresholdMs / 1000} onChange={numericChange("averageChaseDurationSeconds")} /><em>秒</em></span></label>
+        <RuleRow id="AVERAGE_CHASE_TOO_LONG" label="Long Average Chase" enabled={rules.AVERAGE_CHASE_TOO_LONG.enabled} onToggle={(enabled) => onRuleToggle("AVERAGE_CHASE_TOO_LONG", enabled)}>
+          <label><span>Average over</span><span className="number-field"><input aria-label="Average-chase threshold" type="number" min="1" value={rules.AVERAGE_CHASE_TOO_LONG.thresholdMs / 1000} onChange={numericChange("averageChaseDurationSeconds")} /><em>sec</em></span></label>
         </RuleRow>
-        <RuleRow id="LATE_FIRST_ELIMINATION" label="首次减员形成较晚" enabled={rules.LATE_FIRST_ELIMINATION.enabled} onToggle={(enabled) => onRuleToggle("LATE_FIRST_ELIMINATION", enabled)}>
-          <label><span>剩余目标 ≤</span><span className="number-field"><input aria-label="首次减员剩余发电机阈值" type="number" min="0" max="5" step="1" value={rules.LATE_FIRST_ELIMINATION.maximumGeneratorsRemaining} onChange={numericChange("maximumGeneratorsRemaining")} /><em>台</em></span></label>
+        <RuleRow id="LATE_FIRST_ELIMINATION" label="Late First Elimination" enabled={rules.LATE_FIRST_ELIMINATION.enabled} onToggle={(enabled) => onRuleToggle("LATE_FIRST_ELIMINATION", enabled)}>
+          <label><span>Objectives left ≤</span><span className="number-field"><input aria-label="Remaining generators threshold" type="number" min="0" max="5" step="1" value={rules.LATE_FIRST_ELIMINATION.maximumGeneratorsRemaining} onChange={numericChange("maximumGeneratorsRemaining")} /><em>gen</em></span></label>
         </RuleRow>
       </div>
-      <p className="prototype-callout"><Icon name="warning" />所有默认阈值均为“原型待验证数值”，不代表官方标准或平衡结论。</p>
+      <p className="prototype-callout"><Icon name="warning" />All default thresholds are unvalidated prototype values, not official standards or balance conclusions.</p>
     </aside>
   );
 }
