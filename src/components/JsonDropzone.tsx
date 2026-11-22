@@ -47,7 +47,7 @@ export function JsonDropzone({ onFile }: JsonDropzoneProps) {
         className="visually-hidden"
         type="file"
         accept="application/json,.json"
-        aria-label="上传 JSON 文件"
+        aria-label="Upload JSON file"
         onChange={(event) => {
           onFile(event.target.files?.[0]);
           event.target.value = "";
@@ -64,8 +64,8 @@ export function JsonDropzone({ onFile }: JsonDropzoneProps) {
         onDrop={handleDrop}
       >
         <span className="json-dropzone__icon"><Icon name="upload" /></span>
-        <strong>拖动 JSON 文件到这里</strong>
-        <small id="json-dropzone-help">或点击选择本地文件</small>
+        <strong>Drop a JSON file here</strong>
+        <small id="json-dropzone-help">or tap to browse local files</small>
       </button>
     </>
   );
