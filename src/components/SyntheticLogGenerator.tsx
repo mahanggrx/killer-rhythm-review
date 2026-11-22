@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { english } from "../i18n/english";
 import { DEFAULT_METRIC_CONFIG } from "../config/metricThresholds";
 import {
   DEFAULT_SYNTHETIC_LOG_INPUT,
@@ -121,22 +122,22 @@ export function SyntheticLogGenerator({
     <section className="generator-panel" aria-labelledby="generator-title">
       <div className="generator-panel__heading">
         <div>
-          <p className="section-kicker">合成日志生成器</p>
-          <h2 id="generator-title">按指标生成一份可分析的 JSON</h2>
+          <p className="section-kicker">Synthetic Log Builder</p>
+          <h2 id="generator-title">Generate a Test Match from Metrics</h2>
           <p>
-            填写三个核心结果，需要时可展开高级设置；生成日志会通过现有校验并回算确认指标一致。
+            Set three core values. Advanced options are optional; each generated log is validated and recalculated before analysis.
           </p>
         </div>
         <button className="button button--secondary" type="button" onClick={onClose}>
-          关闭
+          Close
         </button>
       </div>
 
       <form className="generator-form" onSubmit={handleSubmit}>
         <label className="field-control">
-          <span>首次进入追逐时间（秒）</span>
+          <span>Time to First Chase (sec)</span>
           <input
-            aria-label="首次进入追逐时间（秒）"
+            aria-label="Time to First Chase (sec)"
             type="number"
             min={SYNTHETIC_LOG_LIMITS.minimumSeconds}
             max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
@@ -146,9 +147,9 @@ export function SyntheticLogGenerator({
           />
         </label>
         <label className="field-control">
-          <span>完整追逐平均时长（秒）</span>
+          <span>Average Chase Duration (sec)</span>
           <input
-            aria-label="完整追逐平均时长（秒）"
+            aria-label="Average Chase Duration (sec)"
             type="number"
             min={SYNTHETIC_LOG_LIMITS.minimumAverageChaseSeconds}
             max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
@@ -158,7 +159,7 @@ export function SyntheticLogGenerator({
           />
         </label>
         <label className="field-control">
-          <span>首次减员时剩余发电机</span>
+          <span>Generators Left at First Elimination</span>
           <input
             type="number"
             min={SYNTHETIC_LOG_LIMITS.minimumGeneratorsRemaining}
@@ -174,35 +175,35 @@ export function SyntheticLogGenerator({
 
         <details className="generator-advanced">
           <summary>
-            <span>高级设置</span>
-            <small>留空时自动生成确定性默认场景</small>
+            <span>Advanced Settings</span>
+            <small>Leave blank to use deterministic defaults</small>
           </summary>
           <div className="generator-advanced__grid">
             <label className="field-control">
-              <span>完整追逐区间数</span>
+              <span>Completed Chase Count</span>
               <input
-                aria-label="完整追逐次数"
+                aria-label="Completed Chase Count"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumCompleteChases}
                 max={SYNTHETIC_LOG_LIMITS.maximumCompleteChases}
                 step="1"
-                placeholder="自动"
+                placeholder="Auto"
                 value={values.completeChaseCount}
                 onChange={(event) => updateValue("completeChaseCount", event.target.value)}
               />
               <small className="field-control__help">
-                具有明确追逐开始与追逐结束的区间数量；未结束追逐不计。
+                Only chases with confirmed start and end events count.
               </small>
             </label>
             <label className="field-control">
-              <span>首次追逐持续时间（秒）</span>
+              <span>First Chase Duration (sec)</span>
               <input
-                aria-label="首次追逐持续时间（秒）"
+                aria-label="First Chase Duration (sec)"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumFirstChaseSeconds}
                 max={SYNTHETIC_LOG_LIMITS.maximumSeconds}
                 step="1"
-                placeholder="自动"
+                placeholder="Auto"
                 value={values.firstChaseDurationSeconds}
                 onChange={(event) => updateValue(
                   "firstChaseDurationSeconds",
@@ -210,34 +211,34 @@ export function SyntheticLogGenerator({
                 )}
               />
               <small className="field-control__help">
-                可选。用于让首段追逐与平均值不同；留空时各段追逐使用同一平均时长。
+                Optional. Allows the first chase to differ from the overall average.
               </small>
             </label>
             <label className="field-control">
-              <span>以目标丢失或转火结束的追逐数</span>
+              <span>以Lost/Switched Chases结束的追逐数</span>
               <input
-                aria-label="目标丢失或转火次数"
+                aria-label="Lost or Switched Chases"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumAbandonedChases}
                 max={SYNTHETIC_LOG_LIMITS.maximumCompleteChases}
                 step="1"
-                placeholder="自动"
+                placeholder="Auto"
                 value={values.abandonedChaseCount}
                 onChange={(event) => updateValue("abandonedChaseCount", event.target.value)}
               />
               <small className="field-control__help">
-                目标丢失、距离中断、逃生者进柜或转火，均记 1 次。
+                Count chases ended by lost line of sight, range break, locker entry, or target switch.
               </small>
             </label>
             <label className="field-control">
               <span>高进度电机达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，未被控机即被修开的数量（台）</span>
               <input
-                aria-label={`高进度电机达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 后未被控机即被修开的数量`}
+                aria-label={`Generators completed at ${DEFAULT_HIGH_PROGRESS_PERCENT}% without interference`}
                 type="number"
                 min="0"
                 max={SYNTHETIC_LOG_LIMITS.maximumHighProgressGeneratorLosses}
                 step="1"
-                placeholder="自动"
+                placeholder="Auto"
                 value={values.highProgressGeneratorLosses}
                 onChange={(event) => updateValue(
                   "highProgressGeneratorLosses",
@@ -245,18 +246,18 @@ export function SyntheticLogGenerator({
                 )}
               />
               <small className="field-control__help">
-                “控机”指杀手行为实际造成发电机即时掉进度、开始回退或封锁。高进度电机达到 {DEFAULT_HIGH_PROGRESS_PERCENT}% 后，在下一次控机前完成，记 1 台；同一台最多记 1 台。
+                Interference requires an actual progress loss, regression, or block. Count each generator once if it completes after reaching {DEFAULT_HIGH_PROGRESS_PERCENT}% without further interference.
               </small>
             </label>
             <label className="field-control">
               <span>对进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机的控机次数</span>
               <input
-                aria-label={`对进度达到 ${DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机的控机次数`}
+                aria-label={`Killer interference actions at ≥ ${DEFAULT_HIGH_PROGRESS_PERCENT}%`}
                 type="number"
                 min="0"
                 max={SYNTHETIC_LOG_LIMITS.maximumKeyGeneratorInterruptions}
                 step="1"
-                placeholder="自动"
+                placeholder="Auto"
                 value={values.keyGeneratorInterruptions}
                 onChange={(event) => updateValue(
                   "keyGeneratorInterruptions",
@@ -264,23 +265,23 @@ export function SyntheticLogGenerator({
                 )}
               />
               <small className="field-control__help">
-                “控机”采用相同定义；同一次杀手行为即使同时造成掉进度和回退，也只记 1 次。逃生者自行停修不计。
+                Count actual Killer interference once per action, even if it applies multiple effects. Survivors stopping repairs does not count.
               </small>
             </label>
             <label className="field-control">
-              <span>最终永久减员数（人）</span>
+              <span>Total Eliminations</span>
               <input
-                aria-label="最终永久减员数"
+                aria-label="Total Eliminations"
                 type="number"
                 min={SYNTHETIC_LOG_LIMITS.minimumEliminations}
                 max={SYNTHETIC_LOG_LIMITS.maximumEliminations}
                 step="1"
-                placeholder="自动"
+                placeholder="Auto"
                 value={values.totalEliminations}
                 onChange={(event) => updateValue("totalEliminations", event.target.value)}
               />
               <small className="field-control__help">
-                献祭、处决或流血死亡算永久减员；逃脱和 BOT 接管不算。
+                Sacrifice, kill, and bleed-out count. Escapes and bot takeovers do not.
               </small>
             </label>
           </div>
@@ -288,38 +289,38 @@ export function SyntheticLogGenerator({
 
         <div className="generator-form__action">
           <button className="button button--primary" type="submit">
-            <Icon name="pulse" />生成并分析
+            <Icon name="pulse" />Generate & Analyze
           </button>
-          <p>高级参数可以留空；生成结果仅用于构造可验证的规则测试日志。</p>
+          <p>Advanced fields are optional. Synthetic logs are for testing rules, not real match reconstruction.</p>
         </div>
       </form>
 
       {errors.length > 0 && (
         <div className="generator-errors" role="alert">
           <Icon name="warning" />
-          <ul>{errors.map((error) => <li key={error}>{error}</li>)}</ul>
+          <ul>{errors.map((error) => <li key={error}>{english(error)}</li>)}</ul>
         </div>
       )}
 
       {generated && (
         <div className="generator-output">
           <div className="generator-verification">
-            <p><Icon name="check" />已通过日志校验与指标回算</p>
+            <p><Icon name="check" />Log Validated & Metrics Recalculated</p>
             <dl>
-              <div><dt>首次进入追逐</dt><dd>{generated.verification.firstChaseStartSeconds} 秒</dd></div>
-              <div><dt>平均追逐时长</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} 秒</dd></div>
-              <div><dt>首次减员剩余电机</dt><dd>{generated.verification.generatorsRemainingAtFirstElimination}</dd></div>
-              <div><dt>完整追逐</dt><dd>{generated.verification.completeChaseCount} 次</dd></div>
-              <div><dt>首次追逐时长</dt><dd>{generated.verification.firstChaseDurationSeconds} 秒</dd></div>
-              <div><dt>平均追逐空窗</dt><dd>{formatVerificationValue(generated.verification.averageChaseGapSeconds)} 秒</dd></div>
-              <div><dt>目标丢失或转火</dt><dd>{generated.verification.abandonedChaseCount} 次</dd></div>
-              <div><dt>高进度电机 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 后未被控机即修开</dt><dd>{generated.verification.highProgressGeneratorLosses} 台</dd></div>
-              <div><dt>对进度 ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% 的高进度电机控机</dt><dd>{generated.verification.keyGeneratorInterruptions} 次</dd></div>
-              <div><dt>最终永久减员</dt><dd>{generated.verification.totalEliminations} 人</dd></div>
+              <div><dt>Time to First Chase</dt><dd>{generated.verification.firstChaseStartSeconds} sec</dd></div>
+              <div><dt>Average Chase</dt><dd>{formatVerificationValue(generated.verification.averageChaseDurationSeconds)} sec</dd></div>
+              <div><dt>Generators Left at First Elimination</dt><dd>{generated.verification.generatorsRemainingAtFirstElimination}</dd></div>
+              <div><dt>Completed Chases</dt><dd>{generated.verification.completeChaseCount} chases</dd></div>
+              <div><dt>First Chase Duration</dt><dd>{generated.verification.firstChaseDurationSeconds} sec</dd></div>
+              <div><dt>Average Chase Gap</dt><dd>{formatVerificationValue(generated.verification.averageChaseGapSeconds)} sec</dd></div>
+              <div><dt>Lost/Switched Chases</dt><dd>{generated.verification.abandonedChaseCount} chases</dd></div>
+              <div><dt>Generators completed at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}% without interference</dt><dd>{generated.verification.highProgressGeneratorLosses} generators</dd></div>
+              <div><dt>Interference actions at ≥ {DEFAULT_HIGH_PROGRESS_PERCENT}%</dt><dd>{generated.verification.keyGeneratorInterruptions} chases</dd></div>
+              <div><dt>Total Eliminations</dt><dd>{generated.verification.totalEliminations} Survivors</dd></div>
             </dl>
           </div>
           <label className="generated-json">
-            <span>生成的 JSON</span>
+            <span>Generated JSON</span>
             <textarea readOnly rows={12} value={generated.source} />
           </label>
         </div>
