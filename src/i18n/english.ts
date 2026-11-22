@@ -634,6 +634,8 @@ export function english(text: string | null | undefined): string {
   if (text == null) return "";
   let output = text;
   for (const [source, translated] of substitutions) {
+    // Single-character terms are standalone values, not arbitrary text fragments.
+    if (source.length === 1 && output !== source) continue;
     output = output.replaceAll(source, translated);
   }
   return output;
